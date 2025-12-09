@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发现校园 - Campus Review</title>
+    <link rel="stylesheet" href="theme_ahu_navy.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* ==================== Campus Review List Page ==================== */
+
+        body {
+            background: var(--background) !important;
+            padding-top: 140px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            z-index: var(--z-sticky);
+            animation: slideDown 300ms ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .top-bar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-md) var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            cursor: pointer;
+            transition: transform var(--transition-base);
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary-gradient);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-text {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            color: var(--foreground);
+        }
+
+        .search-wrapper {
+            flex: 1;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 44px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-full);
+            font-size: var(--text-sm);
+            font-family: var(--font-body);
+            background: var(--background);
+            transition: all var(--transition-base);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+            background: var(--surface);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: var(--spacing-md);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--foreground-muted);
+            transition: all var(--transition-base);
+            pointer-events: none;
+        }
+
+        .search-input:focus ~ .search-icon {
+            color: var(--primary);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .publish-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: var(--radius-full);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .publish-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .publish-btn:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .user-avatar:hover {
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        /* Category Tabs */
+        .category-bar {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            z-index: calc(var(--z-sticky) - 1);
+            animation: slideDown 400ms ease-out 100ms both;
+        }
+
+        .category-tabs {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            display: flex;
+            gap: var(--spacing-md);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-tab {
+            flex-shrink: 0;
+            padding: var(--spacing-xs) var(--spacing-lg);
+            border-radius: var(--radius-full);
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            color: var(--foreground-secondary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+        }
+
+        .category-tab:hover {
+            background: var(--ahu-navy-50);
+            color: var(--foreground);
+        }
+
+        .category-tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            position: fixed;
+            top: 112px;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            z-index: calc(var(--z-sticky) - 2);
+            animation: slideDown 350ms ease-out 200ms both;
+        }
+
+        .filter-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .filter-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+        }
+
+        .sort-group {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .sort-label {
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+        }
+
+        .sort-option {
+            padding: var(--spacing-xs) var(--spacing-md);
+            border: none;
+            background: transparent;
+            color: var(--foreground-secondary);
+            font-size: var(--text-sm);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            border-radius: var(--radius-md);
+        }
+
+        .sort-option:hover {
+            background: var(--ahu-navy-50);
+            color: var(--foreground);
+        }
+
+        .sort-option.active {
+            color: var(--primary);
+            font-weight: var(--font-semibold);
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-md);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--foreground);
+            font-size: var(--text-sm);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary);
+            background: var(--ahu-navy-50);
+        }
+
+        .result-count {
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-xl) var(--spacing-lg);
+        }
+
+        /* Review Grid */
+        .review-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--spacing-xl);
+        }
+
+        .review-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            animation: cardEntrance 400ms ease-out both;
+        }
+
+        @keyframes cardEntrance {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .review-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-image-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 60%;
+            overflow: hidden;
+            background: var(--background-secondary);
+        }
+
+        .card-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform var(--transition-base);
+        }
+
+        .review-card:hover .card-image {
+            transform: scale(1.05);
+        }
+
+        .card-content {
+            padding: var(--spacing-lg);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .place-name {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            color: var(--foreground);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .rating-section {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            color: #FFC107;
+            width: 16px;
+            height: 16px;
+        }
+
+        .star.empty {
+            color: var(--border);
+        }
+
+        .rating-score {
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            color: var(--foreground);
+        }
+
+        .review-count {
+            font-size: var(--text-xs);
+            color: var(--foreground-secondary);
+        }
+
+        .review-preview {
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+            line-height: 1.5;
+            margin-bottom: var(--spacing-md);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: var(--spacing-sm);
+            border-top: 1px solid var(--border);
+        }
+
+        .reviewer {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .reviewer-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+        }
+
+        .reviewer-info {
+            font-size: var(--text-xs);
+            color: var(--foreground-secondary);
+        }
+
+        .card-tags {
+            display: flex;
+            gap: var(--spacing-xs);
+            margin-top: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 2px var(--spacing-sm);
+            background: var(--ahu-navy-50);
+            color: var(--primary);
+            font-size: 11px;
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-base);
+        }
+
+        .tag:hover {
+            background: var(--ahu-navy-100);
+            transform: scale(1.05);
+        }
+
+        /* Loading More */
+        .load-more {
+            text-align: center;
+            padding: var(--spacing-xl);
+        }
+
+        .load-more-btn {
+            padding: var(--spacing-md) var(--spacing-2xl);
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--foreground);
+            font-size: var(--text-base);
+            font-weight: var(--font-medium);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .load-more-btn:hover {
+            border-color: var(--primary);
+            background: var(--ahu-navy-50);
+        }
+
+        .loading-spinner {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            color: var(--foreground-secondary);
+            font-size: var(--text-sm);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 800ms linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: var(--spacing-2xl);
+            right: var(--spacing-2xl);
+            width: 56px;
+            height: 56px;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            box-shadow: var(--shadow-xl);
+            transition: all var(--transition-base);
+            z-index: var(--z-sticky);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fabPulse 2000ms ease-in-out infinite;
+        }
+
+        @keyframes fabPulse {
+            0%, 100% {
+                box-shadow: var(--shadow-xl);
+            }
+            50% {
+                box-shadow: var(--shadow-2xl);
+            }
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-2xl);
+            animation: none;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        .fab.hidden {
+            transform: translateY(100px);
+            opacity: 0;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-3xl) var(--spacing-xl);
+            animation: fadeIn 500ms ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .empty-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto var(--spacing-xl);
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            color: var(--foreground);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .empty-text {
+            font-size: var(--text-base);
+            color: var(--foreground-secondary);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .empty-action {
+            padding: var(--spacing-md) var(--spacing-2xl);
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: var(--radius-full);
+            font-size: var(--text-base);
+            font-weight: var(--font-semibold);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .empty-action:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                var(--background-secondary) 0%,
+                var(--background) 50%,
+                var(--background-secondary) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1500ms infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .skeleton-image {
+            width: 100%;
+            padding-top: 60%;
+        }
+
+        .skeleton-content {
+            padding: var(--spacing-lg);
+        }
+
+        .skeleton-line {
+            height: 12px;
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .skeleton-line.title {
+            height: 18px;
+            width: 70%;
+        }
+
+        .skeleton-line.short {
+            width: 40%;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding-top: 160px;
+            }
+
+            .top-bar-content {
+                flex-wrap: wrap;
+            }
+
+            .logo-text {
+                display: none;
+            }
+
+            .search-wrapper {
+                order: 3;
+                flex-basis: 100%;
+                max-width: 100%;
+            }
+
+            .publish-btn span {
+                display: none;
+            }
+
+            .review-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .fab {
+                bottom: var(--spacing-lg);
+                right: var(--spacing-lg);
+                width: 48px;
+                height: 48px;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div class="logo" onclick="handleLogoClick()">
+                <div class="logo-icon">
+                    <i data-lucide="school" style="width: 20px; height: 20px; color: white;"></i>
+                </div>
+                <span class="logo-text">Campus Review</span>
+            </div>
+
+            <div class="search-wrapper">
+                <input
+                    type="text"
+                    class="search-input"
+                    placeholder="搜索校园地点..."
+                    oninput="handleSearch(event)"
+                >
+                <i data-lucide="search" class="search-icon" style="width: 18px; height: 18px;"></i>
+            </div>
+
+            <div class="user-actions">
+                <button class="publish-btn" onclick="handlePublish()">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    <span>发布</span>
+                </button>
+                <img
+                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+                    alt="用户头像"
+                    class="user-avatar"
+                    onclick="handleUserClick()"
+                >
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Bar -->
+    <div class="category-bar">
+        <div class="category-tabs">
+            <button class="category-tab active" onclick="handleCategoryClick(event, 'all')">全部</button>
+            <button class="category-tab" onclick="handleCategoryClick(event, 'canteen')">食堂</button>
+            <button class="category-tab" onclick="handleCategoryClick(event, 'library')">图书馆</button>
+            <button class="category-tab" onclick="handleCategoryClick(event, 'dorm')">宿舍</button>
+            <button class="category-tab" onclick="handleCategoryClick(event, 'building')">教学楼</button>
+            <button class="category-tab" onclick="handleCategoryClick(event, 'gym')">运动场馆</button>
+            <button class="category-tab" onclick="handleCategoryClick(event, 'shop')">商店</button>
+            <button class="category-tab" onclick="handleCategoryClick(event, 'other')">其他</button>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-content">
+            <div class="filter-left">
+                <div class="sort-group">
+                    <span class="sort-label">排序:</span>
+                    <button class="sort-option active" onclick="handleSort(event, 'latest')">最新</button>
+                    <button class="sort-option" onclick="handleSort(event, 'hot')">最热</button>
+                    <button class="sort-option" onclick="handleSort(event, 'rating')">评分</button>
+                </div>
+
+                <button class="filter-btn" onclick="handleFilter()">
+                    <i data-lucide="filter" style="width: 14px; height: 14px;"></i>
+                    <span>筛选</span>
+                </button>
+            </div>
+
+            <div class="result-count">共 <span id="totalCount">128</span> 条</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="review-grid" id="reviewGrid">
+            <!-- Review cards will be inserted here -->
+        </div>
+
+        <!-- Load More -->
+        <div class="load-more" id="loadMore" style="display: none;">
+            <button class="load-more-btn" onclick="loadMoreReviews()">加载更多</button>
+        </div>
+
+        <!-- Loading -->
+        <div class="load-more" id="loading" style="display: none;">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <span>加载中...</span>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <i data-lucide="inbox" class="empty-icon"></i>
+            <h2 class="empty-title">暂无点评</h2>
+            <p class="empty-text">还没有人分享过这个分类的内容<br>成为第一个分享者吧！</p>
+            <button class="empty-action" onclick="handlePublish()">
+                <i data-lucide="plus" style="width: 16px; height: 16px; display: inline; vertical-align: middle;"></i>
+                发布点评
+            </button>
+        </div>
+    </div>
+
+    <!-- FAB -->
+    <button class="fab" id="fab" onclick="handlePublish()">
+        <i data-lucide="plus" style="width: 24px; height: 24px;"></i>
+    </button>
+
+    <script>
+        lucide.createIcons();
+
+        // Mock data
+        const mockReviews = [
+            {
+                id: 1,
+                image: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?w=400',
+                placeName: '一食堂',
+                rating: 4.8,
+                reviewCount: 128,
+                preview: '菜品丰富，价格实惠。二楼的麻辣烫很不错，推荐大家去尝试！',
+                reviewer: {
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
+                    name: '张小明',
+                    time: '2小时前'
+                },
+                tags: ['环境好', '价格实惠'],
+                category: 'canteen'
+            },
+            {
+                id: 2,
+                image: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400',
+                placeName: '图书馆',
+                rating: 4.6,
+                reviewCount: 95,
+                preview: '环境安静，适合自习。但座位经常爆满，建议早点去占座。',
+                reviewer: {
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+                    name: '李华',
+                    time: '5小时前'
+                },
+                tags: ['安静', '座位紧张'],
+                category: 'library'
+            },
+            {
+                id: 3,
+                image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400',
+                placeName: '体育馆',
+                rating: 4.2,
+                reviewCount: 67,
+                preview: '设施齐全，环境不错。就是人多时要排队，建议避开高峰时段。',
+                reviewer: {
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
+                    name: '王芳',
+                    time: '1天前'
+                },
+                tags: ['设施好', '人气高'],
+                category: 'gym'
+            },
+            {
+                id: 4,
+                image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400',
+                placeName: '学生公寓',
+                rating: 4.9,
+                reviewCount: 203,
+                preview: '宿舍条件很好，有空调，独立卫浴。宿管阿姨也很nice！',
+                reviewer: {
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
+                    name: '陈明',
+                    time: '3天前'
+                },
+                tags: ['舒适', '干净'],
+                category: 'dorm'
+            },
+            {
+                id: 5,
+                image: 'https://images.unsplash.com/photo-1562774053-701939374585?w=400',
+                placeName: '主教学楼',
+                rating: 4.5,
+                reviewCount: 89,
+                preview: '教室宽敞明亮，多媒体设备齐全。就是有些教室夏天有点热。',
+                reviewer: {
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+                    name: '赵丽',
+                    time: '5天前'
+                },
+                tags: ['设施好', '位置好'],
+                category: 'building'
+            },
+            {
+                id: 6,
+                image: 'https://images.unsplash.com/photo-1511909525232-61113c912358?w=400',
+                placeName: '校园便利店',
+                rating: 4.3,
+                reviewCount: 156,
+                preview: '东西挺全的，价格也还行。就是晚上10点就关门了，有点早。',
+                reviewer: {
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chris',
+                    name: '刘强',
+                    time: '1周前'
+                },
+                tags: ['方便', '品类全'],
+                category: 'shop'
+            }
+        ];
+
+        let currentCategory = 'all';
+        let currentSort = 'latest';
+        let displayedReviews = [];
+        let page = 1;
+
+        // Initialize
+        function init() {
+            loadReviews();
+            initScrollListener();
+        }
+
+        // Load reviews
+        function loadReviews() {
+            const grid = document.getElementById('reviewGrid');
+            grid.innerHTML = '';
+
+            let filteredReviews = currentCategory === 'all'
+                ? mockReviews
+                : mockReviews.filter(r => r.category === currentCategory);
+
+            displayedReviews = filteredReviews;
+            document.getElementById('totalCount').textContent = filteredReviews.length;
+
+            if (filteredReviews.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('emptyState').style.display = 'none';
+
+            filteredReviews.forEach((review, index) => {
+                const card = createReviewCard(review, index);
+                grid.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Create review card
+        function createReviewCard(review, index) {
+            const card = document.createElement('div');
+            card.className = 'review-card';
+            card.style.animationDelay = `${index * 80}ms`;
+            card.onclick = () => handleCardClick(review.id);
+
+            const stars = generateStars(review.rating);
+
+            card.innerHTML = `
+                <div class="card-image-wrapper">
+                    <img src="${review.image}" alt="${review.placeName}" class="card-image">
+                </div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="place-name">${review.placeName}</h3>
+                            <div class="rating-section">
+                                <div class="stars">${stars}</div>
+                                <span class="rating-score">${review.rating}</span>
+                            </div>
+                            <div class="review-count">${review.reviewCount} 条点评</div>
+                        </div>
+                    </div>
+                    <p class="review-preview">${review.preview}</p>
+                    <div class="card-tags">
+                        ${review.tags.map(tag => `<span class="tag">#${tag}</span>`).join('')}
+                    </div>
+                    <div class="card-footer">
+                        <div class="reviewer">
+                            <img src="${review.reviewer.avatar}" alt="${review.reviewer.name}" class="reviewer-avatar">
+                            <div class="reviewer-info">
+                                <div>${review.reviewer.name}</div>
+                                <div>${review.reviewer.time}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Generate stars
+        function generateStars(rating) {
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+            let html = '';
+
+            for (let i = 0; i < fullStars; i++) {
+                html += '<i data-lucide="star" class="star" style="fill: currentColor;"></i>';
+            }
+
+            if (hasHalfStar) {
+                html += '<i data-lucide="star-half" class="star" style="fill: currentColor;"></i>';
+            }
+
+            const emptyStars = 5 - Math.ceil(rating);
+            for (let i = 0; i < emptyStars; i++) {
+                html += '<i data-lucide="star" class="star empty"></i>';
+            }
+
+            return html;
+        }
+
+        // Handle category click
+        function handleCategoryClick(event, category) {
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            currentCategory = category;
+            loadReviews();
+        }
+
+        // Handle sort
+        function handleSort(event, sort) {
+            document.querySelectorAll('.sort-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            currentSort = sort;
+            // In real app: re-sort and reload
+            console.log('Sort by:', sort);
+        }
+
+        // Handle search
+        let searchTimeout;
+        function handleSearch(event) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const query = event.target.value;
+                console.log('Search:', query);
+                // In real app: filter reviews
+            }, 300);
+        }
+
+        // Handle card click
+        function handleCardClick(id) {
+            console.log('View review:', id);
+            // Navigate to detail page
+        }
+
+        // Handle publish
+        function handlePublish() {
+            console.log('Open publish modal');
+            alert('发布点评功能（演示）');
+        }
+
+        // Handle filter
+        function handleFilter() {
+            console.log('Open filter modal');
+            alert('筛选功能（演示）');
+        }
+
+        // Handle logo click
+        function handleLogoClick() {
+            console.log('Navigate to home');
+        }
+
+        // Handle user click
+        function handleUserClick() {
+            console.log('Navigate to profile');
+        }
+
+        // Load more
+        function loadMoreReviews() {
+            console.log('Load more reviews');
+        }
+
+        // Scroll listener for FAB
+        let lastScrollTop = 0;
+        function initScrollListener() {
+            window.addEventListener('scroll', () => {
+                const fab = document.getElementById('fab');
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+                if (scrollTop > lastScrollTop && scrollTop > 200) {
+                    fab.classList.add('hidden');
+                } else {
+                    fab.classList.remove('hidden');
+                }
+
+                lastScrollTop = scrollTop;
+            });
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

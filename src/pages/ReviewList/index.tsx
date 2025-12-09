@@ -1,0 +1,386 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Search,
+  TrendingUp,
+  Clock,
+  Star,
+  ThumbsUp,
+  MessageCircle,
+  Eye,
+  Bookmark,
+  MapPin,
+  Filter,
+  X,
+  Settings,
+} from 'lucide-react'
+import { getReviewList, getPlaceList } from '@/services/review'
+import { useAuthStore } from '@/store/auth'
+import type { ReviewDTO, PlaceDTO } from '@/types'
+import { Loading, Button, Avatar } from '@/components'
+import styles from './ReviewList.module.css'
+
+const categories = ['全部', '学习场所', '餐饮', '运动场所', '咖啡厅', '娱乐', '其他']
+const sortOptions = [
+  { value: 'latest', label: '最新', icon: Clock },
+  { value: 'rating', label: '评分', icon: Star },
+  { value: 'popular', label: '热门', icon: TrendingUp },
+] as const
+
+export default function ReviewList() {
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+
+  const [reviews, setReviews] = useState<ReviewDTO[]>([])
+  const [places, setPlaces] = useState<PlaceDTO[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [activeCategory, setActiveCategory] = useState('全部')
+  const [sortBy, setSortBy] = useState<'latest' | 'rating' | 'popular'>('latest')
+  const [showFilters, setShowFilters] = useState(false)
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const pageSize = 10
+
+  // Fetch reviews
+  const fetchReviews = async () => {
+    setLoading(true)
+    try {
+      const response = await getReviewList({
+        category: activeCategory === '全部' ? undefined : activeCategory,
+        keyword: searchKeyword || undefined,
+        sortBy,
+        pageNum: currentPage,
+        pageSize,
+      })
+      setReviews(response.list)
+      setTotal(response.total)
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch places
+  const fetchPlaces = async () => {
+    try {
+      const data = await getPlaceList()
+      setPlaces(data)
+    } catch (error) {
+      console.error('Failed to fetch places:', error)
+    }
+  }
+
+  useEffect(() => {
+    fetchReviews()
+  }, [activeCategory, sortBy, currentPage])
+
+  useEffect(() => {
+    fetchPlaces()
+  }, [])
+
+  const handleSearch = () => {
+    setCurrentPage(1)
+    fetchReviews()
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
+
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category)
+    setCurrentPage(1)
+  }
+
+  const handleSortChange = (sort: 'latest' | 'rating' | 'popular') => {
+    setSortBy(sort)
+    setCurrentPage(1)
+  }
+
+  const handleReviewClick = (id: string) => {
+    navigate(`/review/${id}`)
+  }
+
+  const handlePlaceClick = (id: string) => {
+    navigate(`/place/${id}`)
+  }
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className={styles.stars}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            size={16}
+            className={star <= rating ? styles.starFilled : styles.starEmpty}
+            fill={star <= rating ? 'currentColor' : 'none'}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  const totalPages = Math.ceil(total / pageSize)
+
+  return (
+    <div className={styles.container}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.headerTop}>
+          <div className={styles.logoSection}>
+            <h1 className={styles.title}>校园点评</h1>
+            <p className={styles.subtitle}>发现你的校园生活</p>
+          </div>
+          <div className={styles.userSection}>
+            {user?.isAdmin && (
+              <button className={styles.adminBtn} onClick={() => navigate('/admin/users')}>
+                <Settings size={18} />
+                <span>管理后台</span>
+              </button>
+            )}
+            <div className={styles.userInfo} onClick={() => navigate('/profile')}>
+              <Avatar
+                src={user?.avatar}
+                fallbackSeed={user?.openid || 'default'}
+                alt={user?.nickname}
+                className={styles.userAvatar}
+              />
+              <span className={styles.userName}>{user?.nickname}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className={styles.searchSection}>
+          <div className={styles.searchBar}>
+            <Search className={styles.searchIcon} size={20} />
+            <input
+              type="text"
+              placeholder="搜索点评、场所..."
+              className={styles.searchInput}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            {searchKeyword && (
+              <X className={styles.clearIcon} size={20} onClick={() => setSearchKeyword('')} />
+            )}
+            <button className={styles.searchButton} onClick={handleSearch}>
+              搜索
+            </button>
+          </div>
+          <button className={styles.filterButton} onClick={() => setShowFilters(!showFilters)}>
+            <Filter size={20} />
+          </button>
+        </div>
+
+        {/* Category Tabs */}
+        <div className={styles.categoryTabs}>
+          {categories.map((category) => (
+            <button
+              key={category}
+              className={`${styles.categoryTab} ${activeCategory === category ? styles.active : ''}`}
+              onClick={() => handleCategoryChange(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        {/* Sort Options */}
+        {showFilters && (
+          <div className={styles.filterPanel}>
+            <div className={styles.filterSection}>
+              <label className={styles.filterLabel}>排序方式</label>
+              <div className={styles.sortOptions}>
+                {sortOptions.map((option) => {
+                  const IconComponent = option.icon
+                  return (
+                    <button
+                      key={option.value}
+                      className={`${styles.sortOption} ${sortBy === option.value ? styles.active : ''}`}
+                      onClick={() => handleSortChange(option.value)}
+                    >
+                      <IconComponent size={16} />
+                      <span>{option.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className={styles.content}>
+        {/* Popular Places Sidebar */}
+        <div className={styles.sidebar}>
+          <div className={styles.sidebarCard}>
+            <h3 className={styles.sidebarTitle}>热门场所</h3>
+            <div className={styles.placeList}>
+              {places.slice(0, 5).map((place) => (
+                <div key={place.id} className={styles.placeItem} onClick={() => handlePlaceClick(place.id)}>
+                  <img src={place.image} alt={place.name} className={styles.placeImage} />
+                  <div className={styles.placeInfo}>
+                    <h4 className={styles.placeName}>{place.name}</h4>
+                    <div className={styles.placeStats}>
+                      {renderStars(place.rating)}
+                      <span className={styles.placeReviewCount}>{place.reviewCount} 条点评</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.sidebarCard}>
+            <h3 className={styles.sidebarTitle}>快捷入口</h3>
+            <div className={styles.quickLinks}>
+              <button className={styles.quickLink} onClick={() => navigate('/review/create')}>
+                ✍️ 发布点评
+              </button>
+              <button className={styles.quickLink} onClick={() => navigate('/profile')}>
+                📝 我的点评
+              </button>
+              <button className={styles.quickLink} onClick={() => navigate('/profile')}>
+                ⭐ 我的收藏
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Review List */}
+        <div className={styles.reviewList}>
+          {loading ? (
+            <div className={styles.loadingContainer}>
+              <Loading size="lg" />
+              <p className={styles.loadingText}>加载中...</p>
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📝</div>
+              <h3 className={styles.emptyTitle}>暂无点评</h3>
+              <p className={styles.emptyText}>还没有人发布点评，快来成为第一个吧！</p>
+              <Button variant="primary" onClick={() => navigate('/review/create')}>
+                发布点评
+              </Button>
+            </div>
+          ) : (
+            <>
+              {reviews.map((review) => (
+                <div key={review.id} className={styles.reviewCard} onClick={() => handleReviewClick(review.id)}>
+                  {/* Review Header */}
+                  <div className={styles.reviewHeader}>
+                    <div className={styles.reviewUser}>
+                      <Avatar
+                        src={review.userAvatar}
+                        fallbackSeed={review.userId || review.userName}
+                        alt={review.userName}
+                        className={styles.reviewUserAvatar}
+                      />
+                      <div className={styles.reviewUserInfo}>
+                        <h4 className={styles.reviewUserName}>{review.userName}</h4>
+                        <p className={styles.reviewTime}>{review.createTime}</p>
+                      </div>
+                    </div>
+                    <div className={styles.reviewPlace}>
+                      <MapPin size={14} />
+                      <span>{review.placeName}</span>
+                    </div>
+                  </div>
+
+                  {/* Review Rating */}
+                  <div className={styles.reviewRating}>{renderStars(review.rating)}</div>
+
+                  {/* Review Content */}
+                  <h3 className={styles.reviewTitle}>{review.title}</h3>
+                  <p className={styles.reviewContent}>{review.content}</p>
+
+                  {/* Review Images */}
+                  {review.images && review.images.length > 0 && (
+                    <div className={styles.reviewImages}>
+                      {review.images.slice(0, 3).map((image, index) => (
+                        <img key={index} src={image} alt={`${review.title} ${index + 1}`} className={styles.reviewImage} />
+                      ))}
+                      {review.images.length > 3 && (
+                        <div className={styles.moreImages}>+{review.images.length - 3}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Review Tags */}
+                  {review.tags && review.tags.length > 0 && (
+                    <div className={styles.reviewTags}>
+                      {review.tags.map((tag, index) => (
+                        <span key={index} className={styles.reviewTag}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Review Stats */}
+                  <div className={styles.reviewStats}>
+                    <div className={styles.reviewStat}>
+                      <Eye size={16} />
+                      <span>{review.viewCount}</span>
+                    </div>
+                    <div className={styles.reviewStat}>
+                      <ThumbsUp size={16} />
+                      <span>{review.likeCount}</span>
+                    </div>
+                    <div className={styles.reviewStat}>
+                      <MessageCircle size={16} />
+                      <span>{review.commentCount}</span>
+                    </div>
+                    <div className={styles.reviewStat}>
+                      <Bookmark size={16} className={review.isFavorited ? styles.favorited : ''} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className={styles.pagination}>
+                  <button
+                    className={styles.pageButton}
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    上一页
+                  </button>
+                  <div className={styles.pageNumbers}>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        className={`${styles.pageNumber} ${currentPage === page ? styles.active : ''}`}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className={styles.pageButton}
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    下一页
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

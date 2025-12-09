@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发现校园 - Campus Review</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%) !important;
+            min-height: 100vh;
+        }
+
+        /* 顶部搜索栏 */
+        .search-bar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* 瀑布流布局 */
+        .masonry-grid {
+            column-count: 3;
+            column-gap: 16px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1024px) {
+            .masonry-grid {
+                column-count: 2;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .masonry-grid {
+                column-count: 1;
+                padding: 12px;
+            }
+        }
+
+        /* 点评卡片 */
+        .review-card {
+            break-inside: avoid;
+            margin-bottom: 16px;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .review-card:hover {
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .review-card:active {
+            transform: translateY(-2px);
+        }
+
+        /* 图片容器 */
+        .card-image {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .review-card:hover .card-image img {
+            transform: scale(1.08);
+        }
+
+        /* 评分标签 */
+        .rating-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .rating-badge .star {
+            color: #fbbf24;
+        }
+
+        /* 标签 */
+        .tags {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            color: #374151;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 卡片内容 */
+        .card-content {
+            padding: 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-place {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-excerpt {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        /* 用户信息和互动 */
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .card-stats {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .stat-item svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .stat-item.liked {
+            color: #ef4444;
+        }
+
+        /* 筛选标签 */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .filter-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-tab {
+            padding: 8px 20px;
+            border-radius: 20px;
+            background: white;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            border: 2px solid transparent;
+        }
+
+        .filter-tab:hover {
+            background: #f3f4f6;
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, #2E4A85 0%, #1e3a8a 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(46, 74, 133, 0.3);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 12px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 50;
+        }
+
+        .nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 16px;
+            border-radius: 12px;
+        }
+
+        .nav-item:hover {
+            background: #f9fafb;
+        }
+
+        .nav-item.active {
+            color: #2E4A85;
+        }
+
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* 发布按钮 */
+        .fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2E4A85 0%, #1e3a8a 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(46, 74, 133, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 12px 32px rgba(46, 74, 133, 0.5);
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* 加载动画 */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state svg {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部搜索栏 -->
+    <div class="search-bar">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-center gap-4">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 cursor-pointer">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-lg">
+                        校
+                    </div>
+                    <span class="font-bold text-xl text-gray-800 hidden sm:block">校园点评</span>
+                </div>
+
+                <!-- 搜索框 -->
+                <div class="flex-1 max-w-2xl">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                        <input
+                            type="text"
+                            placeholder="搜索食堂、教学楼、图书馆..."
+                            class="w-full pl-12 pr-4 py-3 rounded-full bg-gray-100 border-2 border-transparent focus:border-blue-500 focus:bg-white transition-all outline-none"
+                        >
+                    </div>
+                </div>
+
+                <!-- 用户头像 -->
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 cursor-pointer hover:scale-110 transition-transform">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user1" alt="User" class="w-full h-full rounded-full">
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选标签 -->
+        <div class="filter-tabs">
+            <div class="filter-tab active">🔥 热门</div>
+            <div class="filter-tab">🍜 食堂</div>
+            <div class="filter-tab">📚 图书馆</div>
+            <div class="filter-tab">🏫 教学楼</div>
+            <div class="filter-tab">🏋️ 运动场</div>
+            <div class="filter-tab">🌳 景点</div>
+            <div class="filter-tab">🏠 宿舍</div>
+            <div class="filter-tab">☕ 咖啡厅</div>
+            <div class="filter-tab">🛍️ 超市</div>
+        </div>
+    </div>
+
+    <!-- 瀑布流内容区 -->
+    <div class="masonry-grid" style="padding-bottom: 100px;">
+        <!-- 点评卡片 1 -->
+        <div class="review-card">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1567521464027-f127ff144326?w=600" alt="食堂">
+                <div class="rating-badge">
+                    <span class="star">★</span>
+                    <span>4.8</span>
+                </div>
+                <div class="tags">
+                    <span class="tag">🍜 食堂</span>
+                    <span class="tag">人气高</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">一食堂的麻辣香锅真的太好吃了！</h3>
+                <div class="card-place">
+                    <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                    <span>一食堂三楼</span>
+                </div>
+                <p class="card-excerpt">
+                    强烈推荐一食堂三楼的麻辣香锅，料超足，可以自选食材，老板人也很好！每次去都要排队，建议避开饭点～
+                </p>
+                <div class="card-footer">
+                    <div class="user-info">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user1" alt="User" class="user-avatar">
+                        <span class="user-name">小明同学</span>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat-item liked">
+                            <i data-lucide="heart"></i>
+                            <span>1.2k</span>
+                        </div>
+                        <div class="stat-item">
+                            <i data-lucide="message-circle"></i>
+                            <span>89</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 点评卡片 2 -->
+        <div class="review-card">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1481833761820-0509d3217039?w=600" alt="图书馆">
+                <div class="rating-badge">
+                    <span class="star">★</span>
+                    <span>4.9</span>
+                </div>
+                <div class="tags">
+                    <span class="tag">📚 图书馆</span>
+                    <span class="tag">安静</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">图书馆5楼自习室氛围绝了</h3>
+                <div class="card-place">
+                    <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                    <span>逸夫图书馆5F</span>
+                </div>
+                <p class="card-excerpt">
+                    考研党的福音！有独立座位，还有插座和台灯。窗外景色很好，学累了可以看看风景放松一下。就是要早点去占座～
+                </p>
+                <div class="card-footer">
+                    <div class="user-info">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user2" alt="User" class="user-avatar">
+                        <span class="user-name">考研人</span>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <i data-lucide="heart"></i>
+                            <span>856</span>
+                        </div>
+                        <div class="stat-item">
+                            <i data-lucide="message-circle"></i>
+                            <span>43</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 点评卡片 3 -->
+        <div class="review-card">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600" alt="咖啡厅">
+                <div class="rating-badge">
+                    <span class="star">★</span>
+                    <span>4.6</span>
+                </div>
+                <div class="tags">
+                    <span class="tag">☕ 咖啡厅</span>
+                    <span class="tag">拍照</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">校园里的宝藏咖啡店</h3>
+                <div class="card-place">
+                    <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                    <span>活动中心一楼</span>
+                </div>
+                <p class="card-excerpt">
+                    装修超文艺，咖啡也好喝！美式只要15块，学生价很划算。店里还有很多绿植，很适合拍照打卡～
+                </p>
+                <div class="card-footer">
+                    <div class="user-info">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user3" alt="User" class="user-avatar">
+                        <span class="user-name">咖啡爱好者</span>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <i data-lucide="heart"></i>
+                            <span>645</span>
+                        </div>
+                        <div class="stat-item">
+                            <i data-lucide="message-circle"></i>
+                            <span>28</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 点评卡片 4 -->
+        <div class="review-card">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600" alt="美食">
+                <div class="rating-badge">
+                    <span class="star">★</span>
+                    <span>4.7</span>
+                </div>
+                <div class="tags">
+                    <span class="tag">🍜 食堂</span>
+                    <span class="tag">经济实惠</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">二食堂的黄焖鸡米饭性价比超高</h3>
+                <div class="card-place">
+                    <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                    <span>二食堂二楼</span>
+                </div>
+                <p class="card-excerpt">
+                    10块钱一份，量很大，鸡肉也很嫩。还可以免费加米饭！男生吃两碗米饭也不加钱，太实惠了～
+                </p>
+                <div class="card-footer">
+                    <div class="user-info">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user4" alt="User" class="user-avatar">
+                        <span class="user-name">吃货小王</span>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat-item liked">
+                            <i data-lucide="heart"></i>
+                            <span>982</span>
+                        </div>
+                        <div class="stat-item">
+                            <i data-lucide="message-circle"></i>
+                            <span>67</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 点评卡片 5 -->
+        <div class="review-card">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600" alt="教学楼">
+                <div class="rating-badge">
+                    <span class="star">★</span>
+                    <span>4.5</span>
+                </div>
+                <div class="tags">
+                    <span class="tag">🏫 教学楼</span>
+                    <span class="tag">设施好</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">新教学楼的多媒体教室太舒服了</h3>
+                <div class="card-place">
+                    <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                    <span>B教学楼</span>
+                </div>
+                <p class="card-excerpt">
+                    新装修的教学楼，空调暖气都有，座椅也很舒服。每个教室都有投影和音响，上课体验很棒！
+                </p>
+                <div class="card-footer">
+                    <div class="user-info">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user5" alt="User" class="user-avatar">
+                        <span class="user-name">学习委员</span>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <i data-lucide="heart"></i>
+                            <span>523</span>
+                        </div>
+                        <div class="stat-item">
+                            <i data-lucide="message-circle"></i>
+                            <span>34</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 点评卡片 6 -->
+        <div class="review-card">
+            <div class="card-image">
+                <img src="https://images.unsplash.com/photo-1576678927484-cc907957088c?w=600" alt="运动场">
+                <div class="rating-badge">
+                    <span class="star">★</span>
+                    <span>4.9</span>
+                </div>
+                <div class="tags">
+                    <span class="tag">🏋️ 运动场</span>
+                    <span class="tag">夜跑</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">操场夜跑氛围拉满！</h3>
+                <div class="card-place">
+                    <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                    <span>西区操场</span>
+                </div>
+                <p class="card-excerpt">
+                    晚上的操场灯光很好，跑道也很平整。很多同学一起跑步，感觉特别有活力。建议傍晚7-8点去，人最多～
+                </p>
+                <div class="card-footer">
+                    <div class="user-info">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user6" alt="User" class="user-avatar">
+                        <span class="user-name">跑步达人</span>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat-item liked">
+                            <i data-lucide="heart"></i>
+                            <span>1.5k</span>
+                        </div>
+                        <div class="stat-item">
+                            <i data-lucide="message-circle"></i>
+                            <span>92</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 发布按钮 -->
+    <div class="fab">
+        <i data-lucide="plus" style="width: 28px; height: 28px;"></i>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-items">
+            <div class="nav-item active">
+                <i data-lucide="home"></i>
+                <span>首页</span>
+            </div>
+            <div class="nav-item">
+                <i data-lucide="compass"></i>
+                <span>发现</span>
+            </div>
+            <div class="nav-item">
+                <i data-lucide="bookmark"></i>
+                <span>收藏</span>
+            </div>
+            <div class="nav-item">
+                <i data-lucide="bell"></i>
+                <span>消息</span>
+            </div>
+            <div class="nav-item">
+                <i data-lucide="user"></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化 Lucide 图标
+        lucide.createIcons();
+
+        // 卡片点击事件
+        document.querySelectorAll('.review-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // 如果点击的不是按钮，就跳转到详情页
+                if (!e.target.closest('.stat-item')) {
+                    console.log('跳转到详情页');
+                    // window.location.href = '/review/detail';
+                }
+            });
+        });
+
+        // 点赞功能
+        document.querySelectorAll('.stat-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const heartIcon = this.querySelector('[data-lucide="heart"]');
+                if (heartIcon) {
+                    this.classList.toggle('liked');
+                    // 模拟点赞数变化
+                    const countSpan = this.querySelector('span');
+                    let count = parseInt(countSpan.textContent.replace('k', '000'));
+                    if (this.classList.contains('liked')) {
+                        count += 1;
+                    } else {
+                        count -= 1;
+                    }
+                    countSpan.textContent = count >= 1000 ? (count/1000).toFixed(1) + 'k' : count;
+                }
+            });
+        });
+
+        // 筛选标签切换
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                console.log('筛选：', this.textContent);
+            });
+        });
+
+        // 底部导航切换
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                console.log('导航到：', this.querySelector('span').textContent);
+            });
+        });
+
+        // 发布按钮
+        document.querySelector('.fab').addEventListener('click', function() {
+            console.log('打开发布页面');
+            // window.location.href = '/review/create';
+        });
+
+        // 模拟无限滚动加载
+        let loading = false;
+        window.addEventListener('scroll', function() {
+            if (loading) return;
+
+            const scrollTop = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+
+            if (scrollTop + windowHeight >= documentHeight - 500) {
+                loading = true;
+                console.log('加载更多内容...');
+
+                // 模拟加载延迟
+                setTimeout(() => {
+                    loading = false;
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

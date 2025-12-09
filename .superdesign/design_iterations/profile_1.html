@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - Campus Review</title>
+    <link rel="stylesheet" href="theme_ahu_navy.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* ==================== User Profile Page ==================== */
+
+        body {
+            background: var(--background) !important;
+        }
+
+        .profile-container {
+            min-height: 100vh;
+            padding: clamp(1rem, 3vh, 2rem) clamp(1rem, 3vw, 2rem);
+            animation: pageLoad 500ms ease-out;
+        }
+
+        @keyframes pageLoad {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            max-width: 800px;
+            margin: 0 auto var(--spacing-xl);
+            gap: var(--spacing-md);
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            color: var(--foreground-secondary);
+            font-size: var(--text-sm);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-md);
+            justify-self: start;
+        }
+
+        .back-btn:hover {
+            color: var(--primary);
+            background: var(--ahu-navy-50);
+        }
+
+        .page-title {
+            font-size: var(--text-xl);
+            font-weight: var(--font-bold);
+            color: var(--foreground);
+            margin: 0;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .settings-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            color: var(--foreground-secondary);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            justify-self: end;
+        }
+
+        .settings-btn:hover {
+            color: var(--primary);
+            background: var(--ahu-navy-50);
+        }
+
+        /* Profile Content */
+        .profile-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Avatar Section */
+        .avatar-section {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+            animation: avatarAppear 400ms ease-out 100ms both;
+        }
+
+        @keyframes avatarAppear {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            width: clamp(100px, 15vw, 120px);
+            height: clamp(100px, 15vw, 120px);
+            margin: 0 auto var(--spacing-md);
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid var(--ahu-navy-100);
+            object-fit: cover;
+            transition: all var(--transition-base);
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all var(--transition-base);
+        }
+
+        .avatar-wrapper:hover .avatar {
+            filter: brightness(0.8);
+            border-color: var(--primary);
+            border-width: 4px;
+        }
+
+        .avatar-wrapper:hover .avatar-overlay {
+            background: rgba(0, 0, 0, 0.3);
+            opacity: 1;
+        }
+
+        .upload-icon {
+            color: white;
+            animation: iconPop 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes iconPop {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .change-avatar-text {
+            color: var(--foreground-secondary);
+            font-size: var(--text-sm);
+            margin-top: var(--spacing-xs);
+        }
+
+        .username {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            color: var(--foreground);
+            margin-bottom: var(--spacing-xs);
+            animation: fadeInUp 300ms ease-out 200ms both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                transform: translateY(15px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .user-badge {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-md);
+            background: var(--ahu-navy-100);
+            color: var(--primary);
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+            border-radius: var(--radius-full);
+            animation: fadeInUp 300ms ease-out 250ms both;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-xl);
+            animation: fadeInUp 400ms ease-out 300ms both;
+        }
+
+        .stats-title {
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-lg);
+        }
+
+        .stat-item {
+            text-align: center;
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-base);
+        }
+
+        .stat-item:hover {
+            background: var(--ahu-navy-50);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-item:hover .stat-number {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .stat-item:hover .stat-icon {
+            transform: rotate(5deg);
+        }
+
+        .stat-number {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            color: var(--foreground);
+            transition: all var(--transition-base);
+        }
+
+        .stat-label {
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+            margin-top: var(--spacing-xs);
+        }
+
+        .stat-icon {
+            margin-bottom: var(--spacing-xs);
+            color: var(--primary);
+            transition: transform var(--transition-base);
+        }
+
+        /* Info Card */
+        .info-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-xl);
+            animation: fadeInUp 400ms ease-out 400ms both;
+        }
+
+        .card-title {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            color: var(--foreground);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* Form Fields */
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-label {
+            display: block;
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            color: var(--foreground);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .form-label .required {
+            color: var(--error);
+            margin-left: 2px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            font-family: var(--font-body);
+            color: var(--foreground);
+            background: var(--surface);
+            transition: all var(--transition-base);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .form-input:disabled {
+            background: var(--background-secondary);
+            color: var(--foreground-muted);
+            cursor: not-allowed;
+        }
+
+        .form-input.error {
+            border-color: var(--error);
+            animation: shake 400ms;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-3px); }
+        }
+
+        .input-icon {
+            position: absolute;
+            right: var(--spacing-md);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--foreground-muted);
+            transition: all var(--transition-base);
+        }
+
+        .form-input:focus + .input-icon {
+            color: var(--primary);
+        }
+
+        .char-counter {
+            font-size: var(--text-xs);
+            color: var(--foreground-muted);
+            margin-top: var(--spacing-xs);
+            text-align: right;
+            transition: color var(--transition-base);
+        }
+
+        .char-counter.warning {
+            color: var(--warning);
+        }
+
+        .char-counter.error {
+            color: var(--error);
+            animation: pulse 400ms;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: var(--text-xs);
+            margin-top: var(--spacing-xs);
+            animation: slideDown 300ms ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Textarea */
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Radio Buttons */
+        .radio-group {
+            display: flex;
+            gap: var(--spacing-lg);
+        }
+
+        .radio-option {
+            flex: 1;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .radio-label:hover {
+            background: var(--ahu-navy-50);
+            transform: scale(1.02);
+        }
+
+        .radio-input {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            position: relative;
+            transition: all var(--transition-base);
+        }
+
+        .radio-input::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        input[type="radio"]:checked + .radio-label {
+            border-color: var(--primary);
+            background: var(--ahu-navy-50);
+        }
+
+        input[type="radio"]:checked + .radio-label .radio-input {
+            border-color: var(--primary);
+        }
+
+        input[type="radio"]:checked + .radio-label .radio-input::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .radio-text {
+            font-size: var(--text-base);
+            color: var(--foreground);
+        }
+
+        /* Quick Links */
+        .quick-links {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-xl);
+            animation: fadeInUp 400ms ease-out 500ms both;
+        }
+
+        .link-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .link-item:hover {
+            background: var(--ahu-navy-50);
+            transform: translateX(4px);
+        }
+
+        .link-item:hover .link-icon {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .link-item:hover .link-arrow {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+
+        .link-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .link-icon {
+            color: var(--foreground-secondary);
+            transition: all var(--transition-base);
+        }
+
+        .link-text {
+            font-size: var(--text-base);
+            color: var(--foreground);
+        }
+
+        .link-arrow {
+            color: var(--foreground-muted);
+            opacity: 0.5;
+            transition: all var(--transition-base);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            animation: fadeInUp 400ms ease-out 600ms both;
+        }
+
+        .btn {
+            padding: var(--spacing-md) var(--spacing-xl);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            font-weight: var(--font-semibold);
+            font-family: var(--font-body);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+        .btn-primary.loading {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--foreground);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--background-secondary);
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.98);
+        }
+
+        .spinner-small {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 800ms linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Logout Button */
+        .logout-section {
+            text-align: center;
+            animation: fadeInUp 400ms ease-out 700ms both;
+        }
+
+        .logout-btn {
+            color: var(--foreground-muted);
+            font-size: var(--text-sm);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-sm);
+        }
+
+        .logout-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 1px;
+            background: var(--error);
+            transition: width var(--transition-base);
+        }
+
+        .logout-btn:hover {
+            color: var(--error);
+        }
+
+        .logout-btn:hover::after {
+            width: 100%;
+        }
+
+        /* Unsaved Changes Warning */
+        .unsaved-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--warning);
+            color: white;
+            padding: var(--spacing-md);
+            text-align: center;
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-100%);
+            transition: transform var(--transition-base);
+            z-index: var(--z-sticky);
+        }
+
+        .unsaved-warning.show {
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .radio-group {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+
+            .stats-grid {
+                gap: var(--spacing-sm);
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Unsaved Changes Warning -->
+    <div class="unsaved-warning" id="unsavedWarning">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline; vertical-align: middle;"></i>
+        你有未保存的更改
+    </div>
+
+    <div class="profile-container">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="back-btn" onclick="handleBack()">
+                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+                <span>返回</span>
+            </div>
+            <h1 class="page-title">个人中心</h1>
+            <div class="settings-btn" onclick="handleSettings()">
+                <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-content">
+            <!-- Avatar Section -->
+            <div class="avatar-section">
+                <div class="avatar-wrapper" onclick="handleAvatarClick()">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="用户头像" class="avatar">
+                    <div class="avatar-overlay">
+                        <i data-lucide="camera" class="upload-icon" style="width: 32px; height: 32px;"></i>
+                    </div>
+                </div>
+                <p class="change-avatar-text">点击更换头像</p>
+                <h2 class="username">张小明</h2>
+                <span class="user-badge">普通用户</span>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="stats-section">
+                <div class="stats-title">
+                    <i data-lucide="bar-chart-3" style="width: 16px; height: 16px;"></i>
+                    <span>我的数据</span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item" onclick="handleStatClick('reviews')">
+                        <i data-lucide="file-text" class="stat-icon" style="width: 24px; height: 24px;"></i>
+                        <div class="stat-number">15</div>
+                        <div class="stat-label">篇点评</div>
+                    </div>
+                    <div class="stat-item" onclick="handleStatClick('likes')">
+                        <i data-lucide="thumbs-up" class="stat-icon" style="width: 24px; height: 24px;"></i>
+                        <div class="stat-number">128</div>
+                        <div class="stat-label">个赞</div>
+                    </div>
+                    <div class="stat-item" onclick="handleStatClick('favorites')">
+                        <i data-lucide="bookmark" class="stat-icon" style="width: 24px; height: 24px;"></i>
+                        <div class="stat-number">23</div>
+                        <div class="stat-label">个收藏</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Basic Info Card -->
+            <div class="info-card">
+                <h3 class="card-title">基本信息</h3>
+
+                <!-- Nickname -->
+                <div class="form-group">
+                    <label class="form-label">昵称 <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <input
+                            type="text"
+                            class="form-input"
+                            id="nicknameInput"
+                            value="张小明"
+                            maxlength="20"
+                            oninput="handleNicknameChange()"
+                        >
+                        <i data-lucide="edit-2" class="input-icon" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <div class="char-counter" id="nicknameCounter">3/20</div>
+                </div>
+
+                <!-- Gender -->
+                <div class="form-group">
+                    <label class="form-label">性别 <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" name="gender" id="male" value="male" checked>
+                            <label for="male" class="radio-label">
+                                <div class="radio-input"></div>
+                                <span class="radio-text">男生</span>
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="gender" id="female" value="female">
+                            <label for="female" class="radio-label">
+                                <div class="radio-input"></div>
+                                <span class="radio-text">女生</span>
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="gender" id="other" value="other">
+                            <label for="other" class="radio-label">
+                                <div class="radio-input"></div>
+                                <span class="radio-text">其他</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bio -->
+                <div class="form-group">
+                    <label class="form-label">个人简介</label>
+                    <textarea
+                        class="form-input form-textarea"
+                        id="bioInput"
+                        placeholder="介绍一下你自己吧..."
+                        maxlength="100"
+                        oninput="handleBioChange()"
+                    >热爱篮球的大三学生，喜欢探索校园美食，分享生活点滴。希望在这里遇到志同道合的朋友！</textarea>
+                    <div class="char-counter" id="bioCounter">78/100</div>
+                </div>
+
+                <!-- OpenID (Read-only) -->
+                <div class="form-group">
+                    <label class="form-label">微信 OpenID</label>
+                    <div class="input-wrapper">
+                        <input
+                            type="text"
+                            class="form-input"
+                            value="wx_o6QEO2AFMDDvnfmBqPhkPU8cufYQ"
+                            disabled
+                        >
+                        <i data-lucide="lock" class="input-icon" style="width: 16px; height: 16px;"></i>
+                    </div>
+                </div>
+
+                <!-- Registration Date -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">注册时间</label>
+                    <p style="color: var(--foreground-secondary); font-size: var(--text-sm);">2025-01-15 14:23</p>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="quick-links">
+                <h3 class="card-title">快捷入口</h3>
+
+                <div class="link-item" onclick="handleLinkClick('reviews')">
+                    <div class="link-left">
+                        <i data-lucide="file-text" class="link-icon" style="width: 20px; height: 20px;"></i>
+                        <span class="link-text">我的点评</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="link-arrow" style="width: 20px; height: 20px;"></i>
+                </div>
+
+                <div class="link-item" onclick="handleLinkClick('favorites')">
+                    <div class="link-left">
+                        <i data-lucide="star" class="link-icon" style="width: 20px; height: 20px;"></i>
+                        <span class="link-text">我的收藏</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="link-arrow" style="width: 20px; height: 20px;"></i>
+                </div>
+
+                <div class="link-item" onclick="handleLinkClick('history')">
+                    <div class="link-left">
+                        <i data-lucide="eye" class="link-icon" style="width: 20px; height: 20px;"></i>
+                        <span class="link-text">浏览历史</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="link-arrow" style="width: 20px; height: 20px;"></i>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="handleCancel()">
+                    取消
+                </button>
+                <button class="btn btn-primary" id="saveBtn" onclick="handleSave()">
+                    <span id="saveBtnText">保存修改</span>
+                </button>
+            </div>
+
+            <!-- Logout -->
+            <div class="logout-section">
+                <div class="logout-btn" onclick="handleLogout()">退出登录</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for avatar upload -->
+    <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
+
+    <script>
+        lucide.createIcons();
+
+        // Track changes
+        let hasUnsavedChanges = false;
+        const initialData = {
+            nickname: '张小明',
+            gender: 'male',
+            bio: '热爱篮球的大三学生，喜欢探索校园美食，分享生活点滴。希望在这里遇到志同道合的朋友！'
+        };
+
+        function checkForChanges() {
+            const currentNickname = document.getElementById('nicknameInput').value;
+            const currentGender = document.querySelector('input[name="gender"]:checked').value;
+            const currentBio = document.getElementById('bioInput').value;
+
+            hasUnsavedChanges =
+                currentNickname !== initialData.nickname ||
+                currentGender !== initialData.gender ||
+                currentBio !== initialData.bio;
+
+            document.getElementById('unsavedWarning').classList.toggle('show', hasUnsavedChanges);
+        }
+
+        function handleNicknameChange() {
+            const input = document.getElementById('nicknameInput');
+            const counter = document.getElementById('nicknameCounter');
+            const length = input.value.length;
+
+            counter.textContent = `${length}/20`;
+
+            if (length >= 19) {
+                counter.classList.add('error');
+            } else if (length >= 16) {
+                counter.classList.remove('error');
+                counter.classList.add('warning');
+            } else {
+                counter.classList.remove('error', 'warning');
+            }
+
+            checkForChanges();
+        }
+
+        function handleBioChange() {
+            const input = document.getElementById('bioInput');
+            const counter = document.getElementById('bioCounter');
+            const length = input.value.length;
+
+            counter.textContent = `${length}/100`;
+
+            if (length >= 95) {
+                counter.classList.add('error');
+            } else if (length >= 80) {
+                counter.classList.remove('error');
+                counter.classList.add('warning');
+            } else {
+                counter.classList.remove('error', 'warning');
+            }
+
+            checkForChanges();
+        }
+
+        // Listen to gender changes
+        document.querySelectorAll('input[name="gender"]').forEach(radio => {
+            radio.addEventListener('change', checkForChanges);
+        });
+
+        function handleAvatarClick() {
+            document.getElementById('avatarInput').click();
+        }
+
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // In real app: validate, crop, upload
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.querySelector('.avatar').src = e.target.result;
+                    hasUnsavedChanges = true;
+                    document.getElementById('unsavedWarning').classList.add('show');
+                };
+                reader.readAsDataURL(file);
+                console.log('Avatar file selected:', file.name);
+            }
+        }
+
+        function handleSave() {
+            const btn = document.getElementById('saveBtn');
+            const btnText = document.getElementById('saveBtnText');
+
+            // Show loading
+            btn.classList.add('loading');
+            btnText.innerHTML = '<div class="spinner-small"></div> 保存中...';
+
+            // Simulate API call
+            setTimeout(() => {
+                // Success
+                btnText.textContent = '保存成功!';
+                btn.style.background = 'var(--success)';
+
+                // Reset after 2s
+                setTimeout(() => {
+                    btn.classList.remove('loading');
+                    btn.style.background = '';
+                    btnText.textContent = '保存修改';
+
+                    // Update initial data
+                    initialData.nickname = document.getElementById('nicknameInput').value;
+                    initialData.gender = document.querySelector('input[name="gender"]:checked').value;
+                    initialData.bio = document.getElementById('bioInput').value;
+
+                    hasUnsavedChanges = false;
+                    document.getElementById('unsavedWarning').classList.remove('show');
+                }, 2000);
+            }, 1500);
+
+            console.log('Saving profile changes...');
+        }
+
+        function handleCancel() {
+            if (hasUnsavedChanges) {
+                if (confirm('你有未保存的更改，确定要取消吗？')) {
+                    // Reset to initial values
+                    document.getElementById('nicknameInput').value = initialData.nickname;
+                    document.querySelector(`input[name="gender"][value="${initialData.gender}"]`).checked = true;
+                    document.getElementById('bioInput').value = initialData.bio;
+
+                    hasUnsavedChanges = false;
+                    document.getElementById('unsavedWarning').classList.remove('show');
+
+                    handleNicknameChange();
+                    handleBioChange();
+                }
+            }
+            console.log('Cancel clicked');
+        }
+
+        function handleBack() {
+            if (hasUnsavedChanges) {
+                if (confirm('你有未保存的更改，确定要离开吗？')) {
+                    console.log('Navigate back');
+                }
+            } else {
+                console.log('Navigate back');
+            }
+        }
+
+        function handleSettings() {
+            console.log('Open settings');
+        }
+
+        function handleStatClick(type) {
+            console.log('Navigate to', type);
+        }
+
+        function handleLinkClick(page) {
+            console.log('Navigate to', page);
+        }
+
+        function handleLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                console.log('Logout and redirect to login page');
+                // In real app: call logout API, clear token, redirect
+            }
+        }
+    </script>
+</body>
+</html>

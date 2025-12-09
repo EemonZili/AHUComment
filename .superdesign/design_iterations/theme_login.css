@@ -1,0 +1,169 @@
+/* Campus Review - Login Page Theme */
+/* Target: College students (18-25), fresh, modern, vibrant */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  /* Color Palette - Campus Teal Theme */
+  --pearl-aqua: #a1d2ce;
+  --pearl-aqua-2: #78cad2;
+  --tropical-teal: #62a8ac;
+  --pacific-cyan: #5497a7;
+  --dark-cyan: #50858b;
+
+  /* Semantic Colors */
+  --background: #fafcfc;
+  --background-secondary: #f4f9f9;
+  --surface: #ffffff;
+  --surface-hover: #f8fafa;
+
+  --foreground: #1a1a1a;
+  --foreground-secondary: #666666;
+  --foreground-muted: #999999;
+
+  --primary: var(--pacific-cyan);
+  --primary-hover: var(--dark-cyan);
+  --primary-light: var(--pearl-aqua);
+  --primary-gradient: linear-gradient(135deg, var(--pearl-aqua-2) 0%, var(--pacific-cyan) 100%);
+
+  --accent: var(--tropical-teal);
+  --accent-light: rgba(98, 168, 172, 0.1);
+
+  --border: #e5ecec;
+  --border-hover: var(--tropical-teal);
+
+  --success: #52c41a;
+  --warning: #faad14;
+  --error: #ff4d4f;
+  --info: var(--pearl-aqua-2);
+
+  /* Typography */
+  --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Font Sizes */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
+  --text-5xl: 3rem;        /* 48px */
+
+  /* Font Weights */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  --spacing-3xl: 4rem;     /* 64px */
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;   /* 6px */
+  --radius-md: 0.75rem;    /* 12px */
+  --radius-lg: 1rem;       /* 16px */
+  --radius-xl: 1.5rem;     /* 24px */
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(80, 133, 139, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(80, 133, 139, 0.1), 0 1px 2px -1px rgba(80, 133, 139, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(80, 133, 139, 0.1), 0 2px 4px -2px rgba(80, 133, 139, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(80, 133, 139, 0.1), 0 4px 6px -4px rgba(80, 133, 139, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(80, 133, 139, 0.1), 0 8px 10px -6px rgba(80, 133, 139, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(80, 133, 139, 0.25);
+
+  /* Special Effects */
+  --shadow-glow: 0 0 20px rgba(120, 202, 210, 0.3);
+  --shadow-qr: 0 8px 24px rgba(84, 151, 167, 0.12);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-index Scale */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-modal: 1300;
+  --z-tooltip: 1400;
+}
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body) !important;
+  font-size: var(--text-base) !important;
+  line-height: 1.6 !important;
+  color: var(--foreground) !important;
+  background: var(--background) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading) !important;
+  font-weight: var(--font-bold) !important;
+  line-height: 1.2 !important;
+  color: var(--foreground) !important;
+}
+
+h1 { font-size: var(--text-4xl) !important; }
+h2 { font-size: var(--text-3xl) !important; }
+h3 { font-size: var(--text-2xl) !important; }
+h4 { font-size: var(--text-xl) !important; }
+h5 { font-size: var(--text-lg) !important; }
+h6 { font-size: var(--text-base) !important; }
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+/* Utility Classes */
+.gradient-primary {
+  background: var(--primary-gradient);
+}
+
+.text-gradient {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shadow-soft {
+  box-shadow: var(--shadow-md);
+}
+
+.transition-all {
+  transition: all var(--transition-base);
+}

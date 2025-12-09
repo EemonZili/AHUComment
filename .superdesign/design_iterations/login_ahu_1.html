@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Campus Review 校园点评</title>
+    <link rel="stylesheet" href="theme_ahu.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* ==================== Login Page - AHU Colors Version ==================== */
+
+        /* Layout - Balanced between beauty and fit */
+        .login-container {
+            min-height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            overflow: hidden;
+            animation: pageLoad 600ms ease-out;
+        }
+
+        @keyframes pageLoad {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Left Section - Branding with AHU Red */
+        .branding-section {
+            flex: 1;
+            background: var(--primary-gradient-warm);
+            padding: clamp(1.5rem, 3vh, 2.5rem) clamp(2rem, 4vw, 3rem);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            animation: slideInLeft 400ms ease-out 100ms both;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Animated background elements with gold accents */
+        .branding-section::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -15%;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(255, 242, 0, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 6000ms ease-in-out infinite;
+        }
+
+        .branding-section::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: -10%;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 8000ms ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: clamp(0.75rem, 2vh, 1.25rem);
+            cursor: pointer;
+            transition: transform var(--transition-base);
+        }
+
+        .logo-container:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-icon {
+            width: clamp(44px, 5vw, 52px);
+            height: clamp(44px, 5vw, 52px);
+            background: white;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .brand-name {
+            color: white;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: var(--font-extrabold);
+            margin: 0;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .brand-tagline {
+            color: var(--ahu-gold);
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            font-weight: var(--font-semibold);
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+
+        .hero-image {
+            width: 100%;
+            max-width: clamp(280px, 35vw, 360px);
+            margin: 0 auto clamp(1rem, 2vh, 1.5rem);
+            opacity: 0.95;
+        }
+
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            color: white;
+            font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+            margin-bottom: clamp(0.6rem, 1.5vh, 1rem);
+            opacity: 0.95;
+            transition: all var(--transition-base);
+        }
+
+        .feature-item:hover {
+            transform: translateX(8px);
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 22px;
+            height: 22px;
+            color: var(--ahu-gold);
+            flex-shrink: 0;
+        }
+
+        /* Right Section - Login */
+        .login-section {
+            flex: 1;
+            background: var(--background);
+            padding: clamp(1.5rem, 3vh, 2.5rem) clamp(2rem, 4vw, 3rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: slideInRight 400ms ease-out 200ms both;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-title {
+            font-size: clamp(1.75rem, 4vw, 2.25rem);
+            color: var(--foreground);
+            margin-bottom: clamp(0.25rem, 1vh, 0.5rem);
+            text-align: center;
+        }
+
+        .login-subtitle {
+            font-size: clamp(0.875rem, 1.5vw, 1rem);
+            color: var(--foreground-secondary);
+            text-align: center;
+            margin-bottom: clamp(1.25rem, 3vh, 2rem);
+        }
+
+        /* QR Code Container */
+        .qr-container {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            padding: clamp(1.25rem, 3vh, 2rem);
+            box-shadow: var(--shadow-qr);
+            margin-bottom: clamp(1rem, 2vh, 1.5rem);
+            animation: qrAppear 500ms ease-out 400ms both;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--ahu-red-50);
+        }
+
+        @keyframes qrAppear {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .qr-wrapper {
+            width: clamp(200px, 25vw, 220px);
+            height: clamp(200px, 25vw, 220px);
+            margin: 0 auto clamp(0.75rem, 2vh, 1rem);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* QR Code States */
+        .qr-state {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity var(--transition-base), transform var(--transition-base);
+        }
+
+        .qr-state.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+
+        /* Loading State */
+        .qr-loading {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid var(--border);
+            border-top-color: var(--ahu-red);
+            border-radius: 50%;
+            animation: spin 800ms linear infinite;
+            margin: 0 auto var(--spacing-md);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--foreground-secondary);
+            font-size: var(--text-sm);
+        }
+
+        /* QR Code Ready */
+        .qr-image {
+            width: clamp(180px, 22vw, 200px);
+            height: clamp(180px, 22vw, 200px);
+            background: white;
+            border: 2px solid var(--ahu-red-100);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            transition: all var(--transition-base);
+        }
+
+        .qr-image:hover {
+            border-color: var(--ahu-red);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .qr-image img {
+            width: calc(100% - 20px);
+            height: calc(100% - 20px);
+        }
+
+        /* Scanned State */
+        .qr-scanned {
+            text-align: center;
+        }
+
+        .success-icon {
+            width: clamp(68px, 10vw, 76px);
+            height: clamp(68px, 10vw, 76px);
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto clamp(0.75rem, 2vh, 1rem);
+            animation: successBounce 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes successBounce {
+            0% {
+                transform: scale(0) translateY(20px);
+                opacity: 0;
+            }
+            60% {
+                transform: scale(1.2) translateY(0);
+            }
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .success-icon svg {
+            color: white;
+            width: clamp(36px, 5vw, 44px);
+            height: clamp(36px, 5vw, 44px);
+        }
+
+        .scanned-text {
+            font-size: clamp(1rem, 2vw, 1.125rem);
+            font-weight: var(--font-semibold);
+            color: var(--foreground);
+            margin-bottom: var(--spacing-xs);
+            animation: fadeInUp 300ms ease-out 200ms both;
+        }
+
+        .scanned-subtext {
+            font-size: clamp(0.813rem, 1.5vw, 0.875rem);
+            color: var(--foreground-secondary);
+            animation: fadeInUp 300ms ease-out 300ms both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Confirming State (Pulse) */
+        .qr-confirming {
+            animation: pulse 2000ms ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: var(--shadow-qr);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: var(--shadow-glow);
+            }
+        }
+
+        /* Expired State */
+        .qr-expired {
+            text-align: center;
+        }
+
+        .warning-icon {
+            width: clamp(68px, 10vw, 76px);
+            height: clamp(68px, 10vw, 76px);
+            background: var(--warning);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto clamp(0.75rem, 2vh, 1rem);
+            animation: warningBounce 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes warningBounce {
+            0% {
+                transform: scale(0) rotate(-10deg);
+            }
+            60% {
+                transform: scale(1.2) rotate(0deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        .warning-icon svg {
+            color: white;
+            width: clamp(36px, 5vw, 44px);
+            height: clamp(36px, 5vw, 44px);
+        }
+
+        .expired-text {
+            font-size: clamp(1rem, 2vw, 1.125rem);
+            font-weight: var(--font-semibold);
+            color: var(--foreground);
+            margin-bottom: clamp(0.75rem, 2vh, 1rem);
+        }
+
+        .refresh-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: clamp(0.5rem, 1.5vh, 0.625rem) clamp(1.25rem, 3vw, 1.5rem);
+            border-radius: var(--radius-md);
+            font-size: clamp(0.875rem, 1.5vw, 0.938rem);
+            font-weight: var(--font-medium);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-base);
+        }
+
+        .refresh-btn:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+        .refresh-btn.refreshing svg {
+            animation: spin 600ms ease-out;
+        }
+
+        /* QR Status Text */
+        .qr-status {
+            text-align: center;
+            color: var(--foreground-secondary);
+            font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+        }
+
+        /* Register Link */
+        .register-link {
+            text-align: center;
+            padding: clamp(0.75rem, 2vh, 1rem) 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .register-link a {
+            color: var(--primary);
+            font-weight: var(--font-medium);
+            font-size: clamp(0.875rem, 1.5vw, 0.938rem);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            transition: all var(--transition-base);
+        }
+
+        .register-link a:hover {
+            color: var(--primary-hover);
+        }
+
+        .register-link a svg {
+            transition: transform var(--transition-base);
+        }
+
+        .register-link a:hover svg {
+            transform: translateX(4px);
+        }
+
+        .arrow-bounce {
+            animation: arrowBounce 400ms ease-in-out;
+        }
+
+        @keyframes arrowBounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(4px); }
+        }
+
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: clamp(0.75rem, 2vh, 1rem);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: clamp(0.75rem, 2vw, 1rem);
+            margin-bottom: clamp(0.375rem, 1vh, 0.5rem);
+        }
+
+        .footer-links a {
+            color: var(--foreground-muted);
+            font-size: clamp(0.75rem, 1.5vw, 0.813rem);
+            position: relative;
+            transition: color var(--transition-fast);
+        }
+
+        .footer-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--primary);
+            transition: width var(--transition-base);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-links a:hover::after {
+            width: 100%;
+        }
+
+        .copyright {
+            font-size: clamp(10px, 1.5vw, 11px);
+            color: var(--foreground-muted);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .login-container {
+                flex-direction: column;
+                max-height: none;
+            }
+
+            .branding-section {
+                min-height: 35vh;
+            }
+
+            .hero-image {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .branding-section {
+                min-height: 28vh;
+            }
+
+            .features-list {
+                display: none;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Section - Branding with AHU Red & Gold -->
+        <div class="branding-section">
+            <div class="brand-content">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i data-lucide="school" style="width: 30px; height: 30px; color: var(--ahu-red);"></i>
+                    </div>
+                    <h1 class="brand-name">Campus Review</h1>
+                </div>
+                <p class="brand-tagline">发现你的校园生活</p>
+
+                <!-- SVG Illustration -->
+                <svg class="hero-image" viewBox="0 0 360 270" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="45" y="45" width="270" height="180" rx="12" fill="white" opacity="0.2"/>
+                    <circle cx="180" cy="108" r="36" fill="white" opacity="0.3"/>
+                    <rect x="90" y="162" width="180" height="7" rx="3.5" fill="rgba(255,242,0,0.4)"/>
+                    <rect x="108" y="180" width="144" height="7" rx="3.5" fill="rgba(255,242,0,0.3)"/>
+                    <rect x="126" y="198" width="108" height="7" rx="3.5" fill="white" opacity="0.2"/>
+                </svg>
+
+                <ul class="features-list">
+                    <li class="feature-item">
+                        <i data-lucide="check-circle" class="feature-icon"></i>
+                        <span>真实点评，来自你的同学</span>
+                    </li>
+                    <li class="feature-item">
+                        <i data-lucide="users" class="feature-icon"></i>
+                        <span>校园社交，结识新朋友</span>
+                    </li>
+                    <li class="feature-item">
+                        <i data-lucide="star" class="feature-icon"></i>
+                        <span>发现好店，探索校园美食</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Section - Login -->
+        <div class="login-section">
+            <div class="login-box">
+                <h2 class="login-title">欢迎登录</h2>
+                <p class="login-subtitle">使用微信扫码快速登录</p>
+
+                <div class="qr-container" id="qrContainer">
+                    <div class="qr-wrapper">
+                        <!-- Loading State -->
+                        <div class="qr-state qr-loading" id="stateLoading">
+                            <div class="spinner"></div>
+                            <p class="loading-text">正在生成二维码...</p>
+                        </div>
+
+                        <!-- Ready State -->
+                        <div class="qr-state hidden" id="stateReady">
+                            <div class="qr-image">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://campus-review.example.com/login?sid=demo123" alt="登录二维码">
+                            </div>
+                        </div>
+
+                        <!-- Scanned State -->
+                        <div class="qr-state hidden" id="stateScanned">
+                            <div class="success-icon">
+                                <i data-lucide="check"></i>
+                            </div>
+                            <p class="scanned-text">扫码成功</p>
+                            <p class="scanned-subtext">请在手机上确认登录</p>
+                        </div>
+
+                        <!-- Expired State -->
+                        <div class="qr-state hidden" id="stateExpired">
+                            <div class="warning-icon">
+                                <i data-lucide="alert-circle"></i>
+                            </div>
+                            <p class="expired-text">二维码已过期</p>
+                            <button class="refresh-btn" onclick="refreshQR()">
+                                <i data-lucide="refresh-cw" style="width: 15px; height: 15px;"></i>
+                                <span>点击刷新</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="qr-status" id="qrStatus">请使用微信扫描二维码</p>
+                </div>
+
+                <div class="register-link">
+                    <span style="color: var(--foreground-secondary); font-size: clamp(0.875rem, 1.5vw, 0.938rem);">还没有账号？</span>
+                    <a href="#" onclick="handleRegisterClick(event)">
+                        <span>立即注册</span>
+                        <i data-lucide="arrow-right" style="width: 15px; height: 15px;"></i>
+                    </a>
+                </div>
+
+                <div class="login-footer">
+                    <div class="footer-links">
+                        <a href="#">隐私政策</a>
+                        <a href="#">服务条款</a>
+                        <a href="#">关于我们</a>
+                    </div>
+                    <p class="copyright">© 2025 Campus Review. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let currentState = 'loading';
+        const states = {
+            loading: document.getElementById('stateLoading'),
+            ready: document.getElementById('stateReady'),
+            scanned: document.getElementById('stateScanned'),
+            expired: document.getElementById('stateExpired')
+        };
+
+        function showState(stateName) {
+            Object.keys(states).forEach(key => {
+                states[key].classList.add('hidden');
+            });
+
+            states[stateName].classList.remove('hidden');
+            currentState = stateName;
+
+            const statusEl = document.getElementById('qrStatus');
+            const containerEl = document.getElementById('qrContainer');
+
+            switch(stateName) {
+                case 'loading':
+                    statusEl.textContent = '正在生成二维码...';
+                    containerEl.classList.remove('qr-confirming');
+                    break;
+                case 'ready':
+                    statusEl.textContent = '请使用微信扫描二维码';
+                    containerEl.classList.remove('qr-confirming');
+                    break;
+                case 'scanned':
+                    statusEl.textContent = '等待确认中...';
+                    containerEl.classList.add('qr-confirming');
+                    break;
+                case 'expired':
+                    statusEl.textContent = '';
+                    containerEl.classList.remove('qr-confirming');
+                    break;
+            }
+        }
+
+        setTimeout(() => showState('ready'), 1500);
+
+        function demoStateCycle() {
+            setTimeout(() => showState('scanned'), 8000);
+            setTimeout(() => showState('ready'), 13000);
+            setTimeout(() => showState('expired'), 23000);
+        }
+
+        demoStateCycle();
+
+        function refreshQR() {
+            const btn = event.target.closest('.refresh-btn');
+            btn.classList.add('refreshing');
+            showState('loading');
+            setTimeout(() => {
+                btn.classList.remove('refreshing');
+                showState('ready');
+                demoStateCycle();
+            }, 1500);
+        }
+
+        function handleRegisterClick(event) {
+            event.preventDefault();
+            const arrow = event.currentTarget.querySelector('[data-lucide="arrow-right"]');
+            arrow.parentElement.classList.add('arrow-bounce');
+            setTimeout(() => {
+                arrow.parentElement.classList.remove('arrow-bounce');
+            }, 400);
+            console.log('Navigate to register page');
+        }
+
+        function initWebSocket() {
+            console.log('WebSocket initialized for login status monitoring');
+        }
+
+        initWebSocket();
+    </script>
+</body>
+</html>

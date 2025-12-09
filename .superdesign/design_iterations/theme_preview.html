@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Review - Theme Preview</title>
+    <link rel="stylesheet" href="theme_login.css">
+    <style>
+        .preview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-2xl);
+        }
+
+        .section {
+            margin-bottom: var(--spacing-3xl);
+        }
+
+        .section-title {
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* Color Swatches */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .color-swatch {
+            text-align: center;
+        }
+
+        .color-box {
+            height: 100px;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .color-name {
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+            font-weight: var(--font-medium);
+        }
+
+        /* Typography */
+        .typography-sample {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        /* Buttons */
+        .button-grid {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-md);
+            border: none;
+            font-family: var(--font-body);
+            font-weight: var(--font-medium);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            font-size: var(--text-base);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-light);
+        }
+
+        .btn-text {
+            background: transparent;
+            color: var(--primary);
+        }
+
+        .btn-text:hover {
+            background: var(--accent-light);
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            font-size: var(--text-lg);
+            margin-bottom: var(--spacing-sm);
+            color: var(--foreground);
+        }
+
+        .card-text {
+            color: var(--foreground-secondary);
+            font-size: var(--text-sm);
+        }
+
+        /* Shadows */
+        .shadow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .shadow-box {
+            height: 120px;
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+            font-weight: var(--font-medium);
+        }
+
+        .shadow-xs { box-shadow: var(--shadow-xs); }
+        .shadow-sm { box-shadow: var(--shadow-sm); }
+        .shadow-md { box-shadow: var(--shadow-md); }
+        .shadow-lg { box-shadow: var(--shadow-lg); }
+        .shadow-xl { box-shadow: var(--shadow-xl); }
+        .shadow-2xl { box-shadow: var(--shadow-2xl); }
+
+        /* Gradient Examples */
+        .gradient-box {
+            height: 150px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: var(--text-xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* Spacing Guide */
+        .spacing-grid {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .spacing-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .spacing-box {
+            background: var(--primary-gradient);
+            height: 40px;
+        }
+
+        .spacing-label {
+            font-family: var(--font-mono);
+            font-size: var(--text-sm);
+            color: var(--foreground-secondary);
+            min-width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <!-- Header -->
+        <div class="section">
+            <h1 class="text-gradient">Campus Review Theme Preview</h1>
+            <p style="color: var(--foreground-secondary); margin-top: var(--spacing-sm);">
+                A modern, fresh design system for college students
+            </p>
+        </div>
+
+        <!-- Colors -->
+        <div class="section">
+            <h2 class="section-title">Color Palette</h2>
+            <div class="color-grid">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--pearl-aqua);"></div>
+                    <div class="color-name">Pearl Aqua</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--pearl-aqua-2);"></div>
+                    <div class="color-name">Pearl Aqua 2</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--tropical-teal);"></div>
+                    <div class="color-name">Tropical Teal</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--pacific-cyan);"></div>
+                    <div class="color-name">Pacific Cyan</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--dark-cyan);"></div>
+                    <div class="color-name">Dark Cyan</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md);">Semantic Colors</h3>
+            <div class="color-grid">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--background);"></div>
+                    <div class="color-name">Background</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--surface); border: 1px solid var(--border);"></div>
+                    <div class="color-name">Surface</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--foreground);"></div>
+                    <div class="color-name">Foreground</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--success);"></div>
+                    <div class="color-name">Success</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: var(--error);"></div>
+                    <div class="color-name">Error</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gradient -->
+        <div class="section">
+            <h2 class="section-title">Primary Gradient</h2>
+            <div class="gradient-box gradient-primary">Campus Review Gradient</div>
+        </div>
+
+        <!-- Typography -->
+        <div class="section">
+            <h2 class="section-title">Typography</h2>
+
+            <div class="typography-sample">
+                <h1>Heading 1 - Plus Jakarta Sans Bold</h1>
+                <h2>Heading 2 - Plus Jakarta Sans Bold</h2>
+                <h3>Heading 3 - Plus Jakarta Sans Bold</h3>
+                <h4>Heading 4 - Plus Jakarta Sans Bold</h4>
+                <h5>Heading 5 - Plus Jakarta Sans Bold</h5>
+                <h6>Heading 6 - Plus Jakarta Sans Bold</h6>
+            </div>
+
+            <div class="typography-sample">
+                <p style="font-size: var(--text-lg);">
+                    <strong>Body Large (Inter):</strong> 发现你的校园生活。真实点评，校园社交，发现好店。The quick brown fox jumps over the lazy dog.
+                </p>
+                <p style="font-size: var(--text-base);">
+                    <strong>Body Regular (Inter):</strong> 这是正文字体示例。Campus Review 致力于为大学生提供最真实的校园生活点评平台。
+                </p>
+                <p style="font-size: var(--text-sm); color: var(--foreground-secondary);">
+                    <strong>Body Small:</strong> 小号文字用于次要信息和说明文本。
+                </p>
+            </div>
+
+            <div class="typography-sample">
+                <h3 class="text-gradient">Gradient Text Example</h3>
+                <p style="font-size: var(--text-xl); font-weight: var(--font-semibold);">
+                    <span class="text-gradient">欢迎来到 Campus Review</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="section">
+            <h2 class="section-title">Buttons</h2>
+            <div class="button-grid">
+                <button class="btn btn-primary">Primary Button</button>
+                <button class="btn btn-secondary">Secondary Button</button>
+                <button class="btn btn-text">Text Button</button>
+            </div>
+        </div>
+
+        <!-- Shadows -->
+        <div class="section">
+            <h2 class="section-title">Shadows</h2>
+            <div class="shadow-grid">
+                <div class="shadow-box shadow-xs">shadow-xs</div>
+                <div class="shadow-box shadow-sm">shadow-sm</div>
+                <div class="shadow-box shadow-md">shadow-md</div>
+                <div class="shadow-box shadow-lg">shadow-lg</div>
+                <div class="shadow-box shadow-xl">shadow-xl</div>
+                <div class="shadow-box shadow-2xl">shadow-2xl</div>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="section">
+            <h2 class="section-title">Card Examples</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">校园食堂</div>
+                    <div class="card-text">查看最新的食堂点评，发现美味的校园美食。悬停查看交互效果。</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">图书馆</div>
+                    <div class="card-text">安静的学习环境，丰富的图书资源，是你自习的好去处。</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">运动场馆</div>
+                    <div class="card-text">各类运动设施齐全，篮球场、羽毛球馆应有尽有。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spacing -->
+        <div class="section">
+            <h2 class="section-title">Spacing Scale</h2>
+            <div class="spacing-grid">
+                <div class="spacing-item">
+                    <span class="spacing-label">--spacing-xs</span>
+                    <div class="spacing-box" style="width: var(--spacing-xs);"></div>
+                    <span style="font-size: var(--text-sm); color: var(--foreground-muted);">4px</span>
+                </div>
+                <div class="spacing-item">
+                    <span class="spacing-label">--spacing-sm</span>
+                    <div class="spacing-box" style="width: var(--spacing-sm);"></div>
+                    <span style="font-size: var(--text-sm); color: var(--foreground-muted);">8px</span>
+                </div>
+                <div class="spacing-item">
+                    <span class="spacing-label">--spacing-md</span>
+                    <div class="spacing-box" style="width: var(--spacing-md);"></div>
+                    <span style="font-size: var(--text-sm); color: var(--foreground-muted);">16px</span>
+                </div>
+                <div class="spacing-item">
+                    <span class="spacing-label">--spacing-lg</span>
+                    <div class="spacing-box" style="width: var(--spacing-lg);"></div>
+                    <span style="font-size: var(--text-sm); color: var(--foreground-muted);">24px</span>
+                </div>
+                <div class="spacing-item">
+                    <span class="spacing-label">--spacing-xl</span>
+                    <div class="spacing-box" style="width: var(--spacing-xl);"></div>
+                    <span style="font-size: var(--text-sm); color: var(--foreground-muted);">32px</span>
+                </div>
+                <div class="spacing-item">
+                    <span class="spacing-label">--spacing-2xl</span>
+                    <div class="spacing-box" style="width: var(--spacing-2xl);"></div>
+                    <span style="font-size: var(--text-sm); color: var(--foreground-muted);">48px</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section" style="text-align: center; padding-top: var(--spacing-2xl); border-top: 1px solid var(--border);">
+            <p style="color: var(--foreground-secondary);">
+                Campus Review Theme System &copy; 2025
+            </p>
+            <p style="color: var(--foreground-muted); font-size: var(--text-sm); margin-top: var(--spacing-sm);">
+                Designed for college students with ❤️
+            </p>
+        </div>
+    </div>
+</body>
+</html>
