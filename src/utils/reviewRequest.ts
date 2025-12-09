@@ -5,7 +5,7 @@ import type { ApiResponse } from '@/types'
 // Create axios instance for Review APIs (baseURL: /review)
 // 生产环境直接访问后端地址，开发环境使用代理
 const reviewRequest = axios.create({
-  baseURL: import.meta.env.PROD ? 'http://49.235.97.26/review' : '/review',
+  baseURL: process.env.NODE_ENV === 'production' ? 'http://49.235.97.26/review' : '/review',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

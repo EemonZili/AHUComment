@@ -5,7 +5,7 @@ import type { ApiResponse } from '@/types'
 // Create axios instance for Post APIs (baseURL: /post - for image upload/download)
 // 生产环境直接访问后端地址，开发环境使用代理
 const postRequest = axios.create({
-  baseURL: import.meta.env.PROD ? 'http://49.235.97.26/post' : '/post',
+  baseURL: process.env.NODE_ENV === 'production' ? 'http://49.235.97.26/post' : '/post',
   timeout: 30000, // 图片上传可能需要更长时间
   headers: {
     'Content-Type': 'application/json',

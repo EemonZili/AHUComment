@@ -5,7 +5,7 @@ import type { ApiResponse } from '@/types'
 // Create axios instance
 // 生产环境直接访问后端地址，开发环境使用代理
 const request = axios.create({
-  baseURL: import.meta.env.PROD ? 'http://49.235.97.26/auth' : '/auth',
+  baseURL: process.env.NODE_ENV === 'production' ? 'http://49.235.97.26/auth' : '/auth',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
