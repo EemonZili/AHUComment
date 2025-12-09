@@ -6,6 +6,9 @@ import ReviewDetail from '@/pages/ReviewDetail'
 import PlaceList from '@/pages/PlaceList'
 import PlaceDetail from '@/pages/PlaceDetail'
 import ReviewCreate from '@/pages/ReviewCreate'
+import PostList from '@/pages/PostList'
+import PostDetail from '@/pages/PostDetail'
+import PostCreate from '@/pages/PostCreate'
 import ApiTest from '@/pages/ApiTest'
 import AdminUsers from '@/pages/admin/Users'
 import AdminRoles from '@/pages/admin/Roles'
@@ -94,6 +97,33 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <ReviewCreate />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/posts"
+        element={
+          <ProtectedRoute>
+            <PostList />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/post/:id"
+        element={
+          <ProtectedRoute>
+            <PostDetail />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/post/create"
+        element={
+          <ProtectedRoute>
+            <PostCreate />
           </ProtectedRoute>
         }
       />

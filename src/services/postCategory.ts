@@ -14,15 +14,11 @@ export const addPostCategory = (categoryName: string, data: PostCategoryDTO) => 
 }
 
 // 更新贴文分区
-export const updatePostCategory = (id: number, data: PostCategoryDTO) => {
-  return reviewRequest.post<any, PostCategoryDTO>('/postCategory/update', data, {
-    params: { id },
-  })
+export const updatePostCategory = (data: PostCategoryDTO) => {
+  return reviewRequest.post<any, PostCategoryDTO>('/postCategory/update', data)
 }
 
 // 删除贴文分区
-export const deletePostCategory = (id: number, data: PostCategoryDTO) => {
-  return reviewRequest.post<any, void>('/postCategory/delete', data, {
-    params: { id },
-  })
+export const deletePostCategory = (data: PostCategoryDTO) => {
+  return reviewRequest.post<any, void>('/postCategory/delete', data)
 }

@@ -19,6 +19,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    strictPort: false, // 如果端口被占用，自动尝试下一个可用端口
     proxy: {
       '/auth': {
         target: 'http://49.235.97.26',
@@ -28,10 +29,9 @@ export default defineConfig({
         target: 'http://49.235.97.26',
         changeOrigin: true,
       },
-      '/post': {
-        target: 'http://49.235.97.26',
-        changeOrigin: true,
-      },
     },
+  },
+  preview: {
+    port: 3000,
   },
 })

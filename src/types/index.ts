@@ -249,16 +249,17 @@ export interface PostCategoryDTO {
 export interface PostDTO {
   id?: number
   openid?: string
-  context: string  // 点评内容
+  context?: string  // 点评内容
   image?: string  // 图片 url
   likeCount?: number
   markCount?: string  // 评分数
   scoreDistribution?: Record<string, number>  // 分数统计
-  ownerOpenid: string  // 所属用户openId
+  ownerOpenid?: string  // 所属用户openId
   categoryId: number  // 所属分区 id
   status?: number  // 0: 禁用, 1: 启用
   isDeleted?: number  // 0: 未删除, 1: 已删除
   uv?: number
+  createTime?: string  // 创建时间
 }
 
 export interface PostPageQueryParams extends PaginationParams {
@@ -277,6 +278,7 @@ export interface MarkDTO {
   commentCount?: number
   status?: number  // 0: 禁用, 1: 启用
   isDeleted?: number  // 0: 未删除, 1: 已删除
+  createTime?: string  // 创建时间
 }
 
 export interface MarkPageQueryParams extends PaginationParams {
@@ -294,6 +296,7 @@ export interface NewCommentDTO {
   likeCount?: number
   status?: number  // 0: 禁用, 1: 启用
   isDeleted?: number  // 0: 未删除, 1: 已删除
+  createTime?: string  // 创建时间
 }
 
 export interface NewCommentPageQueryParams extends PaginationParams {

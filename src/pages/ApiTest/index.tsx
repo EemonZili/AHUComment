@@ -99,7 +99,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('1.3 更新贴文分区', () =>
-              updatePostCategory(1, {
+              updatePostCategory({
+                id: 1,
                 categoryName: '更新后的分区名',
                 color: '#4ECDC4',
                 status: 1,
@@ -114,7 +115,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('1.4 删除贴文分区', () =>
-              deletePostCategory(999, {
+              deletePostCategory({
+                id: 1,
                 categoryName: '',
               })
             )
@@ -147,7 +149,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('2.2 更新贴文', () =>
-              updatePost(1, {
+              updatePost({
+                id: 1,
                 ownerOpenid: user?.openid || '',
                 categoryId: 1,
                 context: '更新后的贴文内容',
@@ -162,7 +165,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('2.3 删除贴文', () =>
-              deletePost(999, {
+              deletePost({
+                id: 1,
                 ownerOpenid: '',
                 categoryId: 1,
                 context: '',
@@ -178,7 +182,7 @@ export default function ApiTest() {
           onClick={() =>
             handleTest('2.4 根据ID查询贴文', () =>
               queryPostById({
-                id: 1,
+                id: 2,
                 ownerOpenid: '',
                 categoryId: 1,
                 context: '',
@@ -212,7 +216,7 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('2.6 根据分区查询贴文', () =>
-              pageQueryPostByCategoryId(1, {
+              pageQueryPostByCategoryId({
                 ownerOpenid: '',
                 categoryId: 1,
                 context: '',
@@ -256,7 +260,7 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('2.10 下载贴文图片', () =>
-              downloadPostPicture('https://example.com/image.jpg')
+              downloadPostPicture('http://127.0.0.1:9000/comment-review/object/1f5f21a5-0369-4dfa-bff2-e53c76465b7f_v2-1212e6a23e761bd0732035b5a2c19018_1440w.jpg')
             )
           }
           disabled={loading}
@@ -288,7 +292,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('3.2 修改评分', () =>
-              updateMark(1, {
+              updateMark({
+                id: 1,
                 ownerOpenid: user?.openid || '',
                 postId: 1,
                 score: 4,
@@ -304,7 +309,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('3.3 删除评分', () =>
-              deleteMark(999, {
+              deleteMark({
+                id: 1,
                 ownerOpenid: '',
                 postId: 1,
                 score: 0,
@@ -319,7 +325,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('3.4 根据ID查询评分', () =>
-              queryMarkById(1, {
+              queryMarkById({
+                id: 1,
                 ownerOpenid: '',
                 postId: 1,
                 score: 0,
@@ -334,7 +341,7 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('3.5 根据贴文查询评分', () =>
-              queryMarkByPostId(1, {
+              queryMarkByPostId({
                 ownerOpenid: '',
                 postId: 1,
                 score: 0,
@@ -402,7 +409,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('4.2 修改评论', () =>
-              updateComment(1, {
+              updateComment({
+                id: 1,
                 ownerOpenid: user?.openid || '',
                 pid: 1,
                 context: '修改后的评论内容',
@@ -417,7 +425,8 @@ export default function ApiTest() {
         <Button
           onClick={() =>
             handleTest('4.3 删除评论', () =>
-              deleteComment(999, {
+              deleteComment({
+                id: 1,
                 ownerOpenid: '',
                 pid: 1,
                 context: '',

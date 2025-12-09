@@ -11,17 +11,13 @@ export const addComment = (ownerId: string, pid: number, data: NewCommentDTO) =>
 }
 
 // 修改评论
-export const updateComment = (id: number, data: NewCommentDTO) => {
-  return reviewRequest.post<any, NewCommentDTO>('/comment/update', data, {
-    params: { id },
-  })
+export const updateComment = (data: NewCommentDTO) => {
+  return reviewRequest.post<any, NewCommentDTO>('/comment/update', data)
 }
 
 // 删除评论
-export const deleteComment = (id: number, data: NewCommentDTO) => {
-  return reviewRequest.post<any, void>('/comment/delete', data, {
-    params: { id },
-  })
+export const deleteComment = (data: NewCommentDTO) => {
+  return reviewRequest.post<any, void>('/comment/delete', data)
 }
 
 // 根据 openId 分页查询评论

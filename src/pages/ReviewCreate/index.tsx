@@ -11,10 +11,9 @@ import {
   Tag as TagIcon,
   Send,
 } from 'lucide-react'
-import { searchPlaces } from '@/services/place'
-import { createReview } from '@/services/review'
+import { listPostCategories, addPost, uploadPostPicture } from '@/services'
 import { useAuthStore } from '@/store/auth'
-import type { PlaceDTO, ReviewCreateDTO, DetailedRatings } from '@/types'
+import type { PostCategoryDTO } from '@/types'
 import { Loading } from '@/components'
 import styles from './ReviewCreate.module.css'
 
@@ -30,84 +29,93 @@ export default function ReviewCreate() {
   const { user } = useAuthStore()
 
   const [loading, setLoading] = useState(false)
-  const [searchLoading, setSearchLoading] = useState(false)
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
 
-  // Place selection
-  const [selectedPlace, setSelectedPlace] = useState<PlaceDTO | null>(null)
-  const [placeSearchKeyword, setPlaceSearchKeyword] = useState('')
-  const [placeSearchResults, setPlaceSearchResults] = useState<PlaceDTO[]>([])
-  const [showPlaceSearch, setShowPlaceSearch] = useState(false)
+  // Category selection
+  const [categories, setCategories] = useState<PostCategoryDTO[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<PostCategoryDTO | null>(null)
 
   // Review form data
   const [overallRating, setOverallRating] = useState(5)
-  const [detailedRatings, setDetailedRatings] = useState<DetailedRatings>({
-    environment: 5,
-    service: 5,
-    price: 5,
-    taste: 5,
-  })
-  const [showDetailedRatings, setShowDetailedRatings] = useState(false)
   const [content, setContent] = useState('')
-  const [images, setImages] = useState<string[]>([])
+  const [images, setImages] = useState<string[]>([]) // 用于显示的图片（本地 blob URL）
+  const [serverImages, setServerImages] = useState<string[]>([]) // 服务器返回的 URL（用于提交）
+  const [uploadingImages, setUploadingImages] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [customTag, setCustomTag] = useState('')
 
-  // Pre-select place if placeId is in URL
+  // Fetch categories on mount
   useEffect(() => {
-    const placeId = searchParams.get('placeId')
-    if (placeId) {
-      // In a real app, you would fetch the place details
-      // For now, we'll just store the ID
-      console.log('Pre-selected place ID:', placeId)
+    const fetchCategories = async () => {
+      setCategoriesLoading(true)
+      try {
+        const data = await listPostCategories()
+        setCategories(data)
+        // Auto-select first category if available
+        if (data.length > 0) {
+          setSelectedCategory(data[0])
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      } finally {
+        setCategoriesLoading(false)
+      }
     }
-  }, [searchParams])
+    fetchCategories()
+  }, [])
 
-  const handlePlaceSearch = async (keyword: string) => {
-    setPlaceSearchKeyword(keyword)
-    if (keyword.length < 2) {
-      setPlaceSearchResults([])
-      return
-    }
-
-    setSearchLoading(true)
-    try {
-      const results = await searchPlaces(keyword)
-      setPlaceSearchResults(results)
-    } catch (error) {
-      console.error('Place search failed:', error)
-    } finally {
-      setSearchLoading(false)
-    }
+  const handleCategorySelect = (category: PostCategoryDTO) => {
+    setSelectedCategory(category)
   }
 
-  const handlePlaceSelect = (place: PlaceDTO) => {
-    setSelectedPlace(place)
-    setShowPlaceSearch(false)
-    setPlaceSearchKeyword('')
-    setPlaceSearchResults([])
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
 
-    // In a real app, you would upload these to a server
-    // For now, we'll create temporary URLs
-    const newImages: string[] = []
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          newImages.push(event.target.result as string)
-          setImages((prev) => [...prev, event.target!.result as string])
+    // 立即显示本地预览
+    const localUrls = Array.from(files).map(file => URL.createObjectURL(file))
+    setImages((prev) => [...prev, ...localUrls])
+
+    setUploadingImages(true)
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        try {
+          // 上传图片到服务器
+          const imageUrl = await uploadPostPicture(file)
+          return imageUrl
+        } catch (error) {
+          console.error('Failed to upload image:', error)
+          return null
         }
+      })
+
+      const uploadedUrls = await Promise.all(uploadPromises)
+      const validUrls = uploadedUrls.filter((url): url is string => url !== null)
+
+      // 保存服务器 URL（用于提交），但保持显示本地预览
+      setServerImages((prev) => [...prev, ...validUrls])
+
+      if (validUrls.length < uploadedUrls.length) {
+        alert(`成功上传 ${validUrls.length}/${uploadedUrls.length} 张图片`)
       }
-      reader.readAsDataURL(file)
-    })
+    } catch (error) {
+      console.error('Failed to upload images:', error)
+      alert('图片上传失败，请重试')
+    } finally {
+      setUploadingImages(false)
+      // 重置 input value，允许重复选择同一文件
+      e.target.value = ''
+    }
   }
 
   const handleRemoveImage = (index: number) => {
+    const imageUrl = images[index]
+    // 如果是 blob URL，需要释放
+    if (imageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imageUrl)
+    }
     setImages((prev) => prev.filter((_, i) => i !== index))
+    setServerImages((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleToggleTag = (tag: string) => {
@@ -125,8 +133,13 @@ export default function ReviewCreate() {
 
   const handleSubmit = async () => {
     // Validation
-    if (!selectedPlace) {
-      alert('请选择一个地点')
+    if (!selectedCategory) {
+      alert('请选择一个分区')
+      return
+    }
+
+    if (!user?.openid) {
+      alert('请先登录')
       return
     }
 
@@ -137,20 +150,31 @@ export default function ReviewCreate() {
 
     setLoading(true)
     try {
-      const reviewData: ReviewCreateDTO = {
-        placeId: selectedPlace.id,
-        rating: overallRating,
-        detailedRatings: showDetailedRatings ? detailedRatings : undefined,
-        content: content.trim(),
-        images: images.length > 0 ? images : undefined,
-        tags: tags.length > 0 ? tags : undefined,
+      const postData = {
+        categoryId: selectedCategory.id,
+        context: content.trim(),
+        image: serverImages.length > 0 ? serverImages[0] : '', // 使用服务器 URL
+        ownerOpenid: user.openid,
       }
 
-      const createdReview = await createReview(reviewData)
+      const createdPost = await addPost(
+        user.openid,
+        selectedCategory.id || 0,
+        content.trim(),
+        postData as any
+      )
+
+      // 清理所有 blob URLs
+      images.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url)
+        }
+      })
+
       alert('点评发布成功！')
-      navigate(`/review/${createdReview.id}`)
+      navigate('/') // 跳转到首页
     } catch (error) {
-      console.error('Failed to create review:', error)
+      console.error('Failed to create post:', error)
       alert('发布失败，请重试')
     } finally {
       setLoading(false)
@@ -190,69 +214,26 @@ export default function ReviewCreate() {
       </div>
 
       <div className={styles.content}>
-        {/* Place Selection */}
+        {/* Category Selection */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>选择地点</h2>
-          {selectedPlace ? (
-            <div className={styles.selectedPlace}>
-              <img
-                src={selectedPlace.images[0]}
-                alt={selectedPlace.name}
-                className={styles.selectedPlaceImage}
-              />
-              <div className={styles.selectedPlaceInfo}>
-                <h3 className={styles.selectedPlaceName}>{selectedPlace.name}</h3>
-                <div className={styles.selectedPlaceCategory}>
-                  <MapPin size={14} />
-                  <span>{selectedPlace.category}</span>
-                </div>
-              </div>
-              <button
-                className={styles.changePlaceButton}
-                onClick={() => {
-                  setSelectedPlace(null)
-                  setShowPlaceSearch(true)
-                }}
-              >
-                更换
-              </button>
+          <h2 className={styles.sectionTitle}>选择分区</h2>
+          {categoriesLoading ? (
+            <div className={styles.searchLoading}>
+              <Loading size="sm" />
+              <span>加载中...</span>
             </div>
           ) : (
-            <div className={styles.placeSearch}>
-              <div className={styles.searchBar}>
-                <Search className={styles.searchIcon} size={20} />
-                <input
-                  type="text"
-                  placeholder="搜索地点名称..."
-                  className={styles.searchInput}
-                  value={placeSearchKeyword}
-                  onChange={(e) => handlePlaceSearch(e.target.value)}
-                  onFocus={() => setShowPlaceSearch(true)}
-                />
-              </div>
-              {showPlaceSearch && placeSearchResults.length > 0 && (
-                <div className={styles.searchResults}>
-                  {placeSearchResults.map((place) => (
-                    <div
-                      key={place.id}
-                      className={styles.searchResultItem}
-                      onClick={() => handlePlaceSelect(place)}
-                    >
-                      <img src={place.images[0]} alt={place.name} className={styles.resultImage} />
-                      <div className={styles.resultInfo}>
-                        <div className={styles.resultName}>{place.name}</div>
-                        <div className={styles.resultCategory}>{place.category}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {searchLoading && (
-                <div className={styles.searchLoading}>
-                  <Loading size="sm" />
-                  <span>搜索中...</span>
-                </div>
-              )}
+            <div className={styles.categoryGrid}>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  className={`${styles.categoryButton} ${selectedCategory?.id === category.id ? styles.categoryActive : ''}`}
+                  onClick={() => handleCategorySelect(category)}
+                >
+                  <MapPin size={18} />
+                  <span>{category.categoryName}</span>
+                </button>
+              ))}
             </div>
           )}
         </section>
@@ -264,42 +245,6 @@ export default function ReviewCreate() {
             {renderStarRating(overallRating, setOverallRating)}
             <span className={styles.ratingText}>{overallRating} 分</span>
           </div>
-        </section>
-
-        {/* Detailed Ratings */}
-        <section className={styles.section}>
-          <div className={styles.detailedRatingsHeader}>
-            <h2 className={styles.sectionTitle}>详细评分</h2>
-            <button
-              className={styles.toggleButton}
-              onClick={() => setShowDetailedRatings(!showDetailedRatings)}
-            >
-              {showDetailedRatings ? '收起' : '展开'}
-            </button>
-          </div>
-          {showDetailedRatings && (
-            <div className={styles.detailedRatings}>
-              {Object.entries({
-                environment: '环境',
-                service: '服务',
-                price: '价格',
-                taste: '味道',
-              }).map(([key, label]) => (
-                <div key={key} className={styles.detailedRatingItem}>
-                  <span className={styles.detailedRatingLabel}>{label}</span>
-                  {renderStarRating(
-                    detailedRatings[key as keyof DetailedRatings],
-                    (rating) =>
-                      setDetailedRatings((prev) => ({
-                        ...prev,
-                        [key]: rating,
-                      })),
-                    24
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
         </section>
 
         {/* Content */}
@@ -333,16 +278,26 @@ export default function ReviewCreate() {
               </div>
             ))}
             {images.length < 9 && (
-              <label className={styles.uploadButton}>
+              <label className={`${styles.uploadButton} ${uploadingImages ? styles.uploading : ''}`}>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={handleImageUpload}
+                  disabled={uploadingImages}
                   style={{ display: 'none' }}
                 />
-                <Upload size={32} />
-                <span>上传图片</span>
+                {uploadingImages ? (
+                  <>
+                    <Loading size="sm" />
+                    <span>上传中...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={32} />
+                    <span>上传图片</span>
+                  </>
+                )}
               </label>
             )}
           </div>
@@ -398,7 +353,7 @@ export default function ReviewCreate() {
         <button
           className={styles.submitButton}
           onClick={handleSubmit}
-          disabled={loading || !selectedPlace || content.trim().length < 10}
+          disabled={loading || !selectedCategory || content.trim().length < 10}
         >
           {loading ? (
             <>

@@ -9,31 +9,23 @@ export const addMark = (ownerId: string, postId: number, pid: number, data: Mark
 }
 
 // 修改评分
-export const updateMark = (id: number, data: MarkDTO) => {
-  return reviewRequest.post<any, MarkDTO>('/mark/update', data, {
-    params: { id },
-  })
+export const updateMark = (data: MarkDTO) => {
+  return reviewRequest.post<any, MarkDTO>('/mark/update', data)
 }
 
 // 删除评分
-export const deleteMark = (id: number, data: MarkDTO) => {
-  return reviewRequest.post<any, void>('/mark/delete', data, {
-    params: { id },
-  })
+export const deleteMark = (data: MarkDTO) => {
+  return reviewRequest.post<any, void>('/mark/delete', data)
 }
 
 // 根据 id 查询评分
-export const queryMarkById = (id: number, data: MarkDTO) => {
-  return reviewRequest.post<any, MarkDTO>('/mark/queryById', data, {
-    params: { id },
-  })
+export const queryMarkById = (data: MarkDTO) => {
+  return reviewRequest.post<any, MarkDTO>('/mark/queryById', data)
 }
 
 // 根据 postId 查询评分列表
-export const queryMarkByPostId = (postId: number, data: MarkDTO) => {
-  return reviewRequest.post<any, MarkDTO[]>('/mark/queryByPostId', data, {
-    params: { postId },
-  })
+export const queryMarkByPostId = (data: MarkDTO) => {
+  return reviewRequest.post<any, MarkDTO[]>('/mark/queryByPostId', data)
 }
 
 // 根据 openId 分页查询评分

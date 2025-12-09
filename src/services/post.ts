@@ -10,17 +10,13 @@ export const addPost = (ownerId: string, categoryId: number, context: string, da
 }
 
 // 更新贴文
-export const updatePost = (id: number, data: PostDTO) => {
-  return reviewRequest.post<any, PostDTO>('/post/update', data, {
-    params: { id },
-  })
+export const updatePost = (data: PostDTO) => {
+  return reviewRequest.post<any, PostDTO>('/post/update', data)
 }
 
 // 删除贴文
-export const deletePost = (id: number, data: PostDTO) => {
-  return reviewRequest.post<any, void>('/post/delete', data, {
-    params: { id },
-  })
+export const deletePost = (data: PostDTO) => {
+  return reviewRequest.post<any, void>('/post/delete', data)
 }
 
 // 根据 id 查询贴文
@@ -34,10 +30,8 @@ export const pageQueryPostByOpenId = (data: AuthUserDTO) => {
 }
 
 // 根据 categoryId 分页查询贴文
-export const pageQueryPostByCategoryId = (categoryId: number, data: PostDTO) => {
-  return reviewRequest.post<any, PostDTO[]>('/post/pageQueryByCategoryId', data, {
-    params: { categoryId },
-  })
+export const pageQueryPostByCategoryId = (data: PostDTO) => {
+  return reviewRequest.post<any, PostDTO[]>('/post/pageQueryByCategoryId', data)
 }
 
 // 点赞贴文
@@ -54,22 +48,22 @@ export const queryPostLikes = (id: number) => {
   })
 }
 
-// 上传贴文图片 - 使用 /post 路径
+// 上传贴文图片 - baseURL已经是/review，所以只需/uploadPicture
 export const uploadPostPicture = (file: File) => {
   const formData = new FormData()
-  formData.append('picture', file)
+  formData.append('file', file)
 
-  return postRequest.post<any, string>('/uploadPicture', formData, {
+  return reviewRequest.post<any, string>('/uploadPicture', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   })
 }
 
-// 下载贴文图片 - 使用 /post 路径
+// 下载贴文图片 - baseURL已经是/review，所以只需/downLoadPicture
 export const downloadPostPicture = (url: string) => {
-  return postRequest.post<any, Blob>(
-    '/downloadPicture',
+  return reviewRequest.post<any, Blob>(
+    '/downLoadPicture',
     null,
     {
       params: { url },

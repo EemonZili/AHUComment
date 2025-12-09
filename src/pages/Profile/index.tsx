@@ -14,6 +14,7 @@ import {
   Edit2,
   Lock,
   AlertCircle,
+  MessageCircle,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { updateUser, uploadAvatar, getUserInfo, downLoadAvatar } from '@/services/user'
@@ -400,6 +401,14 @@ export default function Profile() {
             <div className={styles.linkLeft}>
               <FileText className={styles.linkIcon} size={20} />
               <span className={styles.linkText}>我的点评</span>
+            </div>
+            <ChevronRight className={styles.linkArrow} size={20} />
+          </div>
+
+          <div className={styles.linkItem} onClick={() => navigate('/posts')}>
+            <div className={styles.linkLeft}>
+              <MessageCircle className={styles.linkIcon} size={20} />
+              <span className={styles.linkText}>我的贴文</span>
             </div>
             <ChevronRight className={styles.linkArrow} size={20} />
           </div>

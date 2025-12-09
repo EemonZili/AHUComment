@@ -14,13 +14,12 @@ import {
   X,
   Settings,
 } from 'lucide-react'
-import { getReviewList, getPlaceList } from '@/services/review'
+import { listPostCategories, pageQueryPostByCategoryId } from '@/services'
 import { useAuthStore } from '@/store/auth'
-import type { ReviewDTO, PlaceDTO } from '@/types'
-import { Loading, Button, Avatar } from '@/components'
+import type { ReviewDTO, PlaceDTO, PostDTO, PostCategoryDTO } from '@/types'
+import { Loading, Button, Avatar, PostImage } from '@/components'
 import styles from './ReviewList.module.css'
 
-const categories = ['全部', '学习场所', '餐饮', '运动场所', '咖啡厅', '娱乐', '其他']
 const sortOptions = [
   { value: 'latest', label: '最新', icon: Clock },
   { value: 'rating', label: '评分', icon: Star },
@@ -32,10 +31,12 @@ export default function ReviewList() {
   const { user } = useAuthStore()
 
   const [reviews, setReviews] = useState<ReviewDTO[]>([])
-  const [places, setPlaces] = useState<PlaceDTO[]>([])
+  const [hotReviews, setHotReviews] = useState<ReviewDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [searchKeyword, setSearchKeyword] = useState('')
   const [activeCategory, setActiveCategory] = useState('全部')
+  const [activeCategoryId, setActiveCategoryId] = useState<number>(0)
+  const [postCategories, setPostCategories] = useState<PostCategoryDTO[]>([])
   const [sortBy, setSortBy] = useState<'latest' | 'rating' | 'popular'>('latest')
   const [showFilters, setShowFilters] = useState(false)
 
@@ -44,43 +45,167 @@ export default function ReviewList() {
   const [total, setTotal] = useState(0)
   const pageSize = 10
 
-  // Fetch reviews
+  // Fetch reviews - 使用 post APIs
   const fetchReviews = async () => {
+    if (postCategories.length === 0) return
+
     setLoading(true)
     try {
-      const response = await getReviewList({
-        category: activeCategory === '全部' ? undefined : activeCategory,
-        keyword: searchKeyword || undefined,
-        sortBy,
-        pageNum: currentPage,
-        pageSize,
-      })
-      setReviews(response.list)
-      setTotal(response.total)
+      let allPosts: PostDTO[] = []
+
+      if (activeCategory === '全部') {
+        // 获取所有分类的帖子
+        for (const category of postCategories) {
+          const data = await pageQueryPostByCategoryId({
+            categoryId: category.id || 0,
+          })
+
+          if (data && typeof data === 'object' && 'result' in data) {
+            const postsArray = Array.isArray((data as any).result) ? (data as any).result : []
+            allPosts.push(...postsArray)
+          } else if (Array.isArray(data)) {
+            allPosts.push(...data)
+          }
+        }
+      } else {
+        // 获取特定分类的帖子
+        const data = await pageQueryPostByCategoryId({
+          categoryId: activeCategoryId,
+        })
+
+        if (data && typeof data === 'object' && 'result' in data) {
+          allPosts = Array.isArray((data as any).result) ? (data as any).result : []
+        } else if (Array.isArray(data)) {
+          allPosts = data
+        }
+      }
+
+      // 根据排序方式排序
+      let sortedPosts = [...allPosts]
+      if (sortBy === 'popular') {
+        sortedPosts.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+      } else if (sortBy === 'rating') {
+        sortedPosts.sort((a, b) => {
+          const aMarkCount = parseInt(a.markCount || '0')
+          const bMarkCount = parseInt(b.markCount || '0')
+          return bMarkCount - aMarkCount
+        })
+      }
+
+      // 转换 PostDTO 为 ReviewDTO 格式
+      const reviewsData: ReviewDTO[] = sortedPosts.map((post) => ({
+        id: String(post.id || ''),
+        userId: post.ownerOpenid || '',
+        userName: post.ownerOpenid || '匿名用户',
+        userAvatar: post.image || '',
+        rating: Math.min(5, Math.ceil(parseInt(post.markCount || '0') / 2)),
+        title: post.context?.substring(0, 50) || '无标题',
+        content: post.context || '',
+        images: post.image ? [post.image] : [],
+        tags: [],
+        likeCount: post.likeCount || 0,
+        commentCount: 0,
+        viewCount: post.uv || 0,
+        isFavorited: false,
+        placeName: postCategories.find(c => c.id === post.categoryId)?.categoryName || '未知分类',
+        createTime: post.createTime || '刚刚',
+      }))
+
+      setReviews(reviewsData)
+      setTotal(reviewsData.length)
     } catch (error) {
       console.error('Failed to fetch reviews:', error)
+      setReviews([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }
   }
 
-  // Fetch places
-  const fetchPlaces = async () => {
+  // Fetch categories
+  const fetchCategories = async () => {
     try {
-      const data = await getPlaceList()
-      setPlaces(data)
+      const data = await listPostCategories()
+      setPostCategories(data)
+
+      // 更新 categories 数组以匹配 API 数据
+      const categoryNames = ['全部', ...data.map(c => c.categoryName || '')]
+      // 不修改 const categories，只是在内部使用
     } catch (error) {
-      console.error('Failed to fetch places:', error)
+      console.error('Failed to fetch categories:', error)
+    }
+  }
+
+  // Fetch hot reviews - 使用热门帖子
+  const fetchHotReviews = async () => {
+    if (postCategories.length === 0) return
+
+    try {
+      const allPosts: PostDTO[] = []
+      for (const category of postCategories.slice(0, 3)) {
+        const data = await pageQueryPostByCategoryId({
+          categoryId: category.id || 0,
+        })
+
+        if (data && typeof data === 'object' && 'result' in data) {
+          const postsArray = Array.isArray((data as any).result) ? (data as any).result : []
+          allPosts.push(...postsArray)
+        } else if (Array.isArray(data)) {
+          allPosts.push(...data)
+        }
+      }
+
+      // 按点赞数排序
+      const sorted = allPosts.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+
+      // 转换为 ReviewDTO 格式
+      const hotReviewsData: ReviewDTO[] = sorted.slice(0, 5).map((post) => ({
+        id: String(post.id || ''),
+        userId: post.ownerOpenid || '',
+        userName: post.ownerOpenid || '匿名用户',
+        userAvatar: post.image || '',
+        rating: Math.min(5, Math.ceil(parseInt(post.markCount || '0') / 2)),
+        title: post.context?.substring(0, 30) || '热门点评',
+        content: post.context || '',
+        images: post.image ? [post.image] : [],
+        tags: [],
+        likeCount: post.likeCount || 0,
+        commentCount: 0,
+        viewCount: post.uv || 0,
+        isFavorited: false,
+        placeName: postCategories.find(c => c.id === post.categoryId)?.categoryName || '未知',
+        createTime: post.createTime || '刚刚',
+      }))
+
+      setHotReviews(hotReviewsData)
+    } catch (error) {
+      console.error('Failed to fetch hot reviews:', error)
     }
   }
 
   useEffect(() => {
-    fetchReviews()
-  }, [activeCategory, sortBy, currentPage])
+    fetchCategories()
+  }, [])
 
   useEffect(() => {
-    fetchPlaces()
-  }, [])
+    if (postCategories.length > 0) {
+      fetchReviews()
+      fetchHotReviews()
+    }
+  }, [postCategories, activeCategory, sortBy, currentPage])
+
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category)
+    setCurrentPage(1)
+
+    // 找到对应的分类ID
+    if (category === '全部') {
+      setActiveCategoryId(0)
+    } else {
+      const foundCategory = postCategories.find(c => c.categoryName === category)
+      setActiveCategoryId(foundCategory?.id || 0)
+    }
+  }
 
   const handleSearch = () => {
     setCurrentPage(1)
@@ -93,11 +218,6 @@ export default function ReviewList() {
     }
   }
 
-  const handleCategoryChange = (category: string) => {
-    setActiveCategory(category)
-    setCurrentPage(1)
-  }
-
   const handleSortChange = (sort: 'latest' | 'rating' | 'popular') => {
     setSortBy(sort)
     setCurrentPage(1)
@@ -108,7 +228,7 @@ export default function ReviewList() {
   }
 
   const handlePlaceClick = (id: string) => {
-    navigate(`/place/${id}`)
+    navigate(`/review/${id}`)
   }
 
   const renderStars = (rating: number) => {
@@ -138,6 +258,10 @@ export default function ReviewList() {
             <p className={styles.subtitle}>发现你的校园生活</p>
           </div>
           <div className={styles.userSection}>
+            <button className={styles.adminBtn} onClick={() => navigate('/review/create')}>
+              <MessageCircle size={18} />
+              <span>发布点评</span>
+            </button>
             {user?.isAdmin && (
               <button className={styles.adminBtn} onClick={() => navigate('/admin/users')}>
                 <Settings size={18} />
@@ -182,13 +306,19 @@ export default function ReviewList() {
 
         {/* Category Tabs */}
         <div className={styles.categoryTabs}>
-          {categories.map((category) => (
+          <button
+            className={`${styles.categoryTab} ${activeCategory === '全部' ? styles.active : ''}`}
+            onClick={() => handleCategoryChange('全部')}
+          >
+            全部
+          </button>
+          {postCategories.map((category) => (
             <button
-              key={category}
-              className={`${styles.categoryTab} ${activeCategory === category ? styles.active : ''}`}
-              onClick={() => handleCategoryChange(category)}
+              key={category.id}
+              className={`${styles.categoryTab} ${activeCategory === category.categoryName ? styles.active : ''}`}
+              onClick={() => handleCategoryChange(category.categoryName || '')}
             >
-              {category}
+              {category.categoryName}
             </button>
           ))}
         </div>
@@ -220,19 +350,19 @@ export default function ReviewList() {
 
       {/* Main Content */}
       <div className={styles.content}>
-        {/* Popular Places Sidebar */}
+        {/* Popular Reviews Sidebar */}
         <div className={styles.sidebar}>
           <div className={styles.sidebarCard}>
-            <h3 className={styles.sidebarTitle}>热门场所</h3>
+            <h3 className={styles.sidebarTitle}>热门点评</h3>
             <div className={styles.placeList}>
-              {places.slice(0, 5).map((place) => (
-                <div key={place.id} className={styles.placeItem} onClick={() => handlePlaceClick(place.id)}>
-                  <img src={place.image} alt={place.name} className={styles.placeImage} />
+              {hotReviews.slice(0, 5).map((review) => (
+                <div key={review.id} className={styles.placeItem} onClick={() => handlePlaceClick(review.id)}>
+                  <PostImage src={review.images[0]} alt={review.title} className={styles.placeImage} />
                   <div className={styles.placeInfo}>
-                    <h4 className={styles.placeName}>{place.name}</h4>
+                    <h4 className={styles.placeName}>{review.title}</h4>
                     <div className={styles.placeStats}>
-                      {renderStars(place.rating)}
-                      <span className={styles.placeReviewCount}>{place.reviewCount} 条点评</span>
+                      {renderStars(review.rating)}
+                      <span className={styles.placeReviewCount}>{review.likeCount} 点赞</span>
                     </div>
                   </div>
                 </div>
@@ -307,7 +437,7 @@ export default function ReviewList() {
                   {review.images && review.images.length > 0 && (
                     <div className={styles.reviewImages}>
                       {review.images.slice(0, 3).map((image, index) => (
-                        <img key={index} src={image} alt={`${review.title} ${index + 1}`} className={styles.reviewImage} />
+                        <PostImage key={index} src={image} alt={`${review.title} ${index + 1}`} className={styles.reviewImage} />
                       ))}
                       {review.images.length > 3 && (
                         <div className={styles.moreImages}>+{review.images.length - 3}</div>

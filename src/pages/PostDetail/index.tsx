@@ -26,9 +26,9 @@ import {
 import { useAuthStore } from '@/store/auth'
 import type { PostDTO, MarkDTO, NewCommentDTO } from '@/types'
 import { Loading, Avatar } from '@/components'
-import styles from './PlaceDetail.module.css'
+import styles from './PostDetail.module.css'
 
-export default function PlaceDetail() {
+export default function PostDetail() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const { user } = useAuthStore()

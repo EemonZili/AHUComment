@@ -12,106 +12,28 @@ import {
   MessageCircle,
   Bookmark,
 } from 'lucide-react'
-import { getReviewDetail } from '@/services/review'
 import {
-  likeReview,
-  unlikeReview,
-  favoriteReview,
-  unfavoriteReview,
-  markReviewUseful,
-  unmarkReviewUseful,
-} from '@/services/interaction'
-import { createComment, likeComment, unlikeComment } from '@/services/comment'
-import type { ReviewDTO } from '@/types'
-import { Loading, Avatar } from '@/components'
+  queryPostById,
+  queryMarkByPostId,
+  pageQueryCommentByPid,
+  likePost,
+  addComment,
+} from '@/services'
+import type { PostDTO, MarkDTO, NewCommentDTO } from '@/types'
+import { Loading, Avatar, PostImage } from '@/components'
 import styles from './ReviewDetail.module.css'
-
-// Mock data - 实际使用时应从API获取
-const mockReview = {
-  id: '1',
-  place: {
-    name: '一食堂',
-    category: '食堂',
-    address: '合肥市蜀山区安徽大学磬苑校区',
-    rating: 4.8,
-    reviewCount: 128,
-  },
-  images: [
-    'https://images.unsplash.com/photo-1567521464027-f127ff144326?w=800',
-    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800',
-    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
-  ],
-  detailedRatings: {
-    environment: 4.7,
-    service: 4.5,
-    price: 4.9,
-    taste: 4.8,
-  },
-  reviewer: {
-    name: '张小明',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-  },
-  time: '2小时前',
-  content: `菜品丰富，价格实惠。二楼的麻辣烫真的很不错，10块钱就能吃得很饱。一楼的快餐窗口也很方便，适合赶时间的同学。
-
-环境也比较干净整洁，饭点人多但座位够用。服务态度也不错，阿姨都很热情。
-
-唯一的缺点就是有些窗口的队伍有点长，建议避开12点和6点的高峰期。总体来说性价比很高，强烈推荐！`,
-  tags: ['#环境好', '#价格实惠', '#菜品丰富'],
-  usefulCount: 256,
-  comments: [
-    {
-      id: '1',
-      author: '李华',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-      time: '1天前',
-      text: '确实不错！我也经常去二楼吃麻辣烫，老板娘人很好！',
-      reply: {
-        author: '张小明',
-        text: '是吧！那家的麻辣烫真的很赞，价格也实惠',
-      },
-    },
-    {
-      id: '2',
-      author: '王芳',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
-      time: '3天前',
-      text: '一楼的盖饭也很好吃，推荐红烧肉盖饭，分量足味道好！',
-    },
-    {
-      id: '3',
-      author: '陈明',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
-      time: '5天前',
-      text: '同意！食堂整体性价比确实很高，就是人太多了😂',
-    },
-  ],
-  relatedReviews: [
-    {
-      id: '2',
-      image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400',
-      rating: 4.5,
-      text: '早餐品种多，豆浆油条、包子馒头应有尽有，价格也很便宜...',
-    },
-    {
-      id: '3',
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-      rating: 4.9,
-      text: '三楼的特色窗口很不错，煲仔饭和炒饭都很好吃，强烈推荐...',
-    },
-    {
-      id: '4',
-      image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400',
-      rating: 4.7,
-      text: '水果沙拉窗口很受欢迎，新鲜健康，女生们的最爱...',
-    },
-  ],
-}
 
 export default function ReviewDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
   const commentsRef = useRef<HTMLDivElement>(null)
+
+  // 数据状态
+  const [loading, setLoading] = useState(true)
+  const [post, setPost] = useState<PostDTO | null>(null)
+  const [marks, setMarks] = useState<MarkDTO[]>([])
+  const [comments, setComments] = useState<NewCommentDTO[]>([])
+  const [images, setImages] = useState<string[]>([])
 
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isUseful, setIsUseful] = useState(false)
@@ -119,6 +41,52 @@ export default function ReviewDetail() {
   const [isFavorited, setIsFavorited] = useState(false)
   const [showActionBar, setShowActionBar] = useState(true)
   const [commentText, setCommentText] = useState('')
+
+  // 获取帖子详情
+  useEffect(() => {
+    const fetchPostDetail = async () => {
+      if (!id) return
+
+      setLoading(true)
+      try {
+        const postData = await queryPostById({ id: Number(id) } as any)
+        setPost(postData)
+
+        // 设置图片
+        if (postData.image) {
+          setImages([postData.image])
+        }
+
+        // 获取评分
+        const marksData = await queryMarkByPostId({ postId: Number(id) } as any)
+        let marksArray: MarkDTO[] = []
+        if (marksData && typeof marksData === 'object' && 'result' in marksData) {
+          marksArray = Array.isArray((marksData as any).result) ? (marksData as any).result : []
+        } else if (Array.isArray(marksData)) {
+          marksArray = marksData
+        }
+        setMarks(marksArray)
+
+        // 获取评论
+        const commentsData = await pageQueryCommentByPid(Number(id), {} as any)
+        let commentsArray: NewCommentDTO[] = []
+        if (commentsData && typeof commentsData === 'object' && 'result' in commentsData) {
+          commentsArray = Array.isArray((commentsData as any).result)
+            ? (commentsData as any).result
+            : []
+        } else if (Array.isArray(commentsData)) {
+          commentsArray = commentsData
+        }
+        setComments(commentsArray)
+      } catch (error) {
+        console.error('Failed to fetch post detail:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPostDetail()
+  }, [id])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -130,11 +98,11 @@ export default function ReviewDetail() {
   }, [])
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % mockReview.images.length)
+    setCurrentSlide((prev) => (prev + 1) % images.length)
   }
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + mockReview.images.length) % mockReview.images.length)
+    setCurrentSlide((prev) => (prev - 1 + images.length) % images.length)
   }
 
   const goToSlide = (index: number) => {
@@ -145,8 +113,17 @@ export default function ReviewDetail() {
     setIsUseful(!isUseful)
   }
 
-  const toggleLike = () => {
-    setIsLiked(!isLiked)
+  const toggleLike = async () => {
+    if (!id) return
+    try {
+      await likePost(Number(id))
+      setIsLiked(!isLiked)
+      // 重新获取帖子数据以更新点赞数
+      const postData = await queryPostById({ id: Number(id) } as any)
+      setPost(postData)
+    } catch (error) {
+      console.error('Failed to like post:', error)
+    }
   }
 
   const toggleFavorite = () => {
@@ -161,10 +138,30 @@ export default function ReviewDetail() {
     commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const handleSubmitComment = () => {
-    if (commentText.trim()) {
-      alert('评论已发表（演示）')
+  const handleSubmitComment = async () => {
+    if (!commentText.trim() || !id || !post?.ownerOpenid) return
+
+    try {
+      await addComment(post.ownerOpenid, Number(id), {
+        context: commentText,
+      } as any)
+
+      // 重新获取评论列表
+      const commentsData = await pageQueryCommentByPid(Number(id), {} as any)
+      let commentsArray: NewCommentDTO[] = []
+      if (commentsData && typeof commentsData === 'object' && 'result' in commentsData) {
+        commentsArray = Array.isArray((commentsData as any).result)
+          ? (commentsData as any).result
+          : []
+      } else if (Array.isArray(commentsData)) {
+        commentsArray = commentsData
+      }
+      setComments(commentsArray)
       setCommentText('')
+      alert('评论已发表')
+    } catch (error) {
+      console.error('Failed to submit comment:', error)
+      alert('评论发表失败')
     }
   }
 
@@ -181,6 +178,60 @@ export default function ReviewDetail() {
         ))}
       </div>
     )
+  }
+
+  // 显示加载状态
+  if (loading) {
+    return (
+      <div className={styles.reviewDetail}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '100vh',
+          }}
+        >
+          <Loading size="lg" />
+        </div>
+      </div>
+    )
+  }
+
+  // 如果没有数据
+  if (!post) {
+    return (
+      <div className={styles.reviewDetail}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '100vh',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}
+        >
+          <p>帖子不存在</p>
+          <button onClick={() => navigate(-1)} style={{ padding: '0.5rem 1rem' }}>
+            返回
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 计算平均评分
+  const averageRating = marks.length > 0
+    ? Math.min(5, Math.ceil(marks.reduce((sum, mark) => sum + (mark.score || 0), 0) / marks.length))
+    : 0
+
+  // 计算详细评分（根据 marks 的 score 分布）
+  const detailedRatings = {
+    environment: averageRating,
+    service: averageRating,
+    price: averageRating,
+    taste: averageRating,
   }
 
   return (
@@ -207,65 +258,71 @@ export default function ReviewDetail() {
       {/* Main Content */}
       <div className={styles.detailContent}>
         {/* Image Gallery */}
-        <div className={styles.imageGallery}>
-          <div className={styles.carousel}>
-            <div
-              className={styles.carouselInner}
-              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-            >
-              {mockReview.images.map((image, index) => (
-                <div key={index} className={styles.carouselItem}>
-                  <img src={image} alt={`${mockReview.place.name} ${index + 1}`} className={styles.carouselImage} />
-                </div>
-              ))}
-            </div>
-            <div className={styles.carouselControls}>
-              <button className={styles.carouselBtn} onClick={prevSlide}>
-                <ChevronLeft size={20} />
-              </button>
-              <button className={styles.carouselBtn} onClick={nextSlide}>
-                <ChevronRight size={20} />
-              </button>
-            </div>
-            <div className={styles.carouselIndicators}>
-              {mockReview.images.map((_, index) => (
-                <span
-                  key={index}
-                  className={`${styles.indicator} ${index === currentSlide ? styles.active : ''}`}
-                  onClick={() => goToSlide(index)}
-                />
-              ))}
+        {images.length > 0 && (
+          <div className={styles.imageGallery}>
+            <div className={styles.carousel}>
+              <div
+                className={styles.carouselInner}
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {images.map((image, index) => (
+                  <div key={index} className={styles.carouselItem}>
+                    <PostImage src={image} alt={`${post.context} ${index + 1}`} className={styles.carouselImage} />
+                  </div>
+                ))}
+              </div>
+              {images.length > 1 && (
+                <>
+                  <div className={styles.carouselControls}>
+                    <button className={styles.carouselBtn} onClick={prevSlide}>
+                      <ChevronLeft size={20} />
+                    </button>
+                    <button className={styles.carouselBtn} onClick={nextSlide}>
+                      <ChevronRight size={20} />
+                    </button>
+                  </div>
+                  <div className={styles.carouselIndicators}>
+                    {images.map((_, index) => (
+                      <span
+                        key={index}
+                        className={`${styles.indicator} ${index === currentSlide ? styles.active : ''}`}
+                        onClick={() => goToSlide(index)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Place Info */}
         <div className={styles.placeInfo}>
           <div className={styles.placeHeader}>
             <div>
-              <h1 className={styles.placeTitle}>{mockReview.place.name}</h1>
-              <span className={styles.placeCategory}>{mockReview.place.category}</span>
+              <h1 className={styles.placeTitle}>{post.context?.substring(0, 30) || '帖子标题'}</h1>
+              <span className={styles.placeCategory}>贴文</span>
             </div>
           </div>
 
           <div className={styles.ratingDisplay}>
-            <div className={styles.ratingNumber}>{mockReview.place.rating}</div>
+            <div className={styles.ratingNumber}>{averageRating}</div>
             <div className={styles.ratingDetails}>
-              {renderStars(mockReview.place.rating, 'lg')}
-              <div className={styles.reviewCountText}>基于 {mockReview.place.reviewCount} 条点评</div>
+              {renderStars(averageRating, 'lg')}
+              <div className={styles.reviewCountText}>基于 {marks.length} 条评分</div>
             </div>
           </div>
 
           <div className={styles.placeAddress}>
             <MapPin size={16} />
-            <span>{mockReview.place.address}</span>
+            <span>发布者: {post.ownerOpenid || '匿名用户'}</span>
           </div>
         </div>
 
         {/* Detailed Ratings */}
         <div className={styles.detailedRatings}>
           <h3 className={styles.sectionTitle}>详细评分</h3>
-          {Object.entries(mockReview.detailedRatings).map(([key, value]) => {
+          {Object.entries(detailedRatings).map(([key, value]) => {
             const labels: Record<string, string> = {
               environment: '环境',
               service: '服务',
@@ -288,31 +345,23 @@ export default function ReviewDetail() {
         <div className={styles.reviewContent}>
           <div className={styles.reviewerHeader}>
             <Avatar
-              src={mockReview.reviewer.avatar}
-              fallbackSeed={mockReview.reviewer.name}
-              alt={mockReview.reviewer.name}
+              src={post.ownerOpenid}
+              fallbackSeed={post.ownerOpenid || 'user'}
+              alt={post.ownerOpenid || '用户'}
               className={styles.reviewerAvatar}
             />
             <div className={styles.reviewerInfo}>
-              <div className={styles.reviewerName}>{mockReview.reviewer.name}</div>
-              <div className={styles.reviewTime}>{mockReview.time}</div>
+              <div className={styles.reviewerName}>{post.ownerOpenid || '匿名用户'}</div>
+              <div className={styles.reviewTime}>{post.createTime || '刚刚'}</div>
             </div>
           </div>
 
-          <div className={styles.reviewText}>{mockReview.content}</div>
-
-          <div className={styles.reviewTags}>
-            {mockReview.tags.map((tag, index) => (
-              <span key={index} className={styles.reviewTag}>
-                {tag}
-              </span>
-            ))}
-          </div>
+          <div className={styles.reviewText}>{post.context}</div>
 
           <div className={styles.usefulSection}>
             <button className={`${styles.usefulBtn} ${isUseful ? styles.active : ''}`} onClick={toggleUseful}>
               <ThumbsUp size={14} />
-              <span>{isUseful ? mockReview.usefulCount + 1 : mockReview.usefulCount}</span>
+              <span>{isUseful ? (post.likeCount || 0) + 1 : post.likeCount || 0}</span>
             </button>
             <span>人觉得有用</span>
           </div>
@@ -320,26 +369,21 @@ export default function ReviewDetail() {
 
         {/* Comments */}
         <div className={styles.commentsSection} ref={commentsRef}>
-          <h3 className={styles.sectionTitle}>全部评论 ({mockReview.comments.length})</h3>
+          <h3 className={styles.sectionTitle}>全部评论 ({comments.length})</h3>
 
-          {mockReview.comments.map((comment, index) => (
+          {comments.map((comment, index) => (
             <div key={comment.id} className={styles.commentItem} style={{ animationDelay: `${index * 80}ms` }}>
               <div className={styles.commentHeader}>
                 <Avatar
-                  src={comment.avatar}
-                  fallbackSeed={comment.author}
-                  alt={comment.author}
+                  src={comment.ownerOpenid}
+                  fallbackSeed={comment.ownerOpenid || 'user'}
+                  alt={comment.ownerOpenid || '用户'}
                   className={styles.commentAvatar}
                 />
-                <span className={styles.commentAuthor}>{comment.author}</span>
-                <span className={styles.commentTime}>· {comment.time}</span>
+                <span className={styles.commentAuthor}>{comment.ownerOpenid || '匿名用户'}</span>
+                <span className={styles.commentTime}>· {comment.createTime || '刚刚'}</span>
               </div>
-              <div className={styles.commentText}>{comment.text}</div>
-              {comment.reply && (
-                <div className={styles.commentReply}>
-                  <strong>{comment.reply.author}:</strong> {comment.reply.text}
-                </div>
-              )}
+              <div className={styles.commentText}>{comment.context}</div>
             </div>
           ))}
 
@@ -358,29 +402,6 @@ export default function ReviewDetail() {
                 发表评论
               </button>
             </div>
-          </div>
-        </div>
-
-        {/* Related Reviews */}
-        <div className={styles.relatedReviews}>
-          <h3 className={styles.sectionTitle}>更多点评</h3>
-          <div className={styles.reviewsScroll}>
-            {mockReview.relatedReviews.map((review) => (
-              <div
-                key={review.id}
-                className={styles.miniReviewCard}
-                onClick={() => navigate(`/review/${review.id}`)}
-              >
-                <img src={review.image} alt="点评" className={styles.miniCardImage} />
-                <div className={styles.miniCardContent}>
-                  <div className={styles.miniCardRating}>
-                    <Star size={14} fill="currentColor" />
-                    <span>{review.rating}</span>
-                  </div>
-                  <p className={styles.miniCardText}>{review.text}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </div>

@@ -22,7 +22,7 @@ import {
 import { useAuthStore } from '@/store/auth'
 import type { PostDTO, PostCategoryDTO } from '@/types'
 import { Loading, Avatar } from '@/components'
-import styles from './PlaceList.module.css'
+import styles from './PostList.module.css'
 
 const sortOptions = [
   { value: 'latest', label: '最新发布', icon: TrendingUp },
@@ -30,7 +30,7 @@ const sortOptions = [
   { value: 'rating', label: '最多评分', icon: Star },
 ] as const
 
-export default function PlaceList() {
+export default function PostList() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
 
@@ -93,6 +93,7 @@ export default function PlaceList() {
           return bMarkCount - aMarkCount
         })
       }
+      // latest 是默认顺序，不需要额外排序
 
       setPosts(sortedPosts)
     } catch (error) {
@@ -167,7 +168,7 @@ export default function PlaceList() {
   }
 
   const handlePostClick = (id: number) => {
-    navigate(`/place/${id}`)
+    navigate(`/post/${id}`)
   }
 
   const handleLike = async (postId: number, e: React.MouseEvent) => {
@@ -188,7 +189,7 @@ export default function PlaceList() {
 
   const renderStars = (markCount: string | number) => {
     const count = typeof markCount === 'string' ? parseInt(markCount) : markCount
-    const rating = Math.min(5, Math.ceil(count / 2))
+    const rating = Math.min(5, Math.ceil(count / 2)) // 简单映射
     return (
       <div className={styles.stars}>
         {[1, 2, 3, 4, 5].map((star) => (
