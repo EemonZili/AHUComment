@@ -25,7 +25,28 @@ export default defineConfig({
         target: 'http://49.235.97.26',
         changeOrigin: true,
       },
-      '/review': {
+      // 只代理 review 下的 API 路径，不代理前端路由
+      '/review/post': {
+        target: 'http://49.235.97.26',
+        changeOrigin: true,
+      },
+      '/review/mark': {
+        target: 'http://49.235.97.26',
+        changeOrigin: true,
+      },
+      '/review/comment': {
+        target: 'http://49.235.97.26',
+        changeOrigin: true,
+      },
+      '/review/category': {
+        target: 'http://49.235.97.26',
+        changeOrigin: true,
+      },
+      '/review/uploadPicture': {
+        target: 'http://49.235.97.26',
+        changeOrigin: true,
+      },
+      '/review/downLoadPicture': {
         target: 'http://49.235.97.26',
         changeOrigin: true,
       },

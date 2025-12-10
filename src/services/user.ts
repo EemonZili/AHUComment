@@ -24,9 +24,10 @@ export const doLogin = (openId: string, sessionId: string) => {
 
 // Get current user info
 export const getUserInfo = (openId?: string) => {
-  // 如果提供了 openId，在请求体中传递
-  const body = openId ? { openid: openId } : {}
-  return request.post<any, AuthUserDTO>('/user/getUserInfo', body)
+  // 如果提供了 openId，在查询参数中传递
+  return request.post<any, AuthUserDTO>('/user/getUserInfo', { openid: openId }, {
+    params: openId ? { openId } : undefined,
+  })
 }
 
 // Update user profile

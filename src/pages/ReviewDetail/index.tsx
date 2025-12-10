@@ -1,63 +1,72 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
   Share2,
   Heart,
-  ChevronLeft,
-  ChevronRight,
-  MapPin,
   Star,
   ThumbsUp,
   MessageCircle,
-  Bookmark,
+  ChevronDown,
+  ChevronUp,
+  Send,
 } from 'lucide-react'
 import {
   queryPostById,
   queryMarkByPostId,
   pageQueryCommentByPid,
   likePost,
+  likeMark,
+  likeComment,
+  addMark,
   addComment,
 } from '@/services'
+import { useAuthStore } from '@/store/auth'
+import { useUserCache } from '@/store/userCache'
 import type { PostDTO, MarkDTO, NewCommentDTO } from '@/types'
-import { Loading, Avatar, PostImage } from '@/components'
+import { Loading, Avatar, PostImage, UserAvatar, UserName } from '@/components'
 import styles from './ReviewDetail.module.css'
+
+// Mark 和其对应的 Comments
+interface MarkWithComments extends MarkDTO {
+  comments?: NewCommentDTO[]
+  commentsExpanded?: boolean
+  showReplyBox?: boolean
+}
 
 export default function ReviewDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const commentsRef = useRef<HTMLDivElement>(null)
+  const { user } = useAuthStore()
+  const { fetchUsers } = useUserCache()
 
   // 数据状态
   const [loading, setLoading] = useState(true)
   const [post, setPost] = useState<PostDTO | null>(null)
-  const [marks, setMarks] = useState<MarkDTO[]>([])
-  const [comments, setComments] = useState<NewCommentDTO[]>([])
-  const [images, setImages] = useState<string[]>([])
-
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [isUseful, setIsUseful] = useState(false)
-  const [isLiked, setIsLiked] = useState(false)
+  const [marks, setMarks] = useState<MarkWithComments[]>([])
   const [isFavorited, setIsFavorited] = useState(false)
-  const [showActionBar, setShowActionBar] = useState(true)
-  const [commentText, setCommentText] = useState('')
 
-  // 获取帖子详情
+  // 发表 Mark 的状态
+  const [showMarkForm, setShowMarkForm] = useState(false)
+  const [newMarkScore, setNewMarkScore] = useState(5)
+  const [newMarkContent, setNewMarkContent] = useState('')
+  const [submittingMark, setSubmittingMark] = useState(false)
+
+  // 回复状态
+  const [replyContent, setReplyContent] = useState<{ [key: number]: string }>({})
+
+  // 获取帖子详情和评分列表
   useEffect(() => {
     const fetchPostDetail = async () => {
       if (!id) return
 
       setLoading(true)
       try {
+        // 获取帖子详情
         const postData = await queryPostById({ id: Number(id) } as any)
         setPost(postData)
 
-        // 设置图片
-        if (postData.image) {
-          setImages([postData.image])
-        }
-
-        // 获取评分
+        // 获取所有评分
         const marksData = await queryMarkByPostId({ postId: Number(id) } as any)
         let marksArray: MarkDTO[] = []
         if (marksData && typeof marksData === 'object' && 'result' in marksData) {
@@ -65,19 +74,68 @@ export default function ReviewDetail() {
         } else if (Array.isArray(marksData)) {
           marksArray = marksData
         }
-        setMarks(marksArray)
 
-        // 获取评论
-        const commentsData = await pageQueryCommentByPid(Number(id), {} as any)
-        let commentsArray: NewCommentDTO[] = []
-        if (commentsData && typeof commentsData === 'object' && 'result' in commentsData) {
-          commentsArray = Array.isArray((commentsData as any).result)
-            ? (commentsData as any).result
-            : []
-        } else if (Array.isArray(commentsData)) {
-          commentsArray = commentsData
+        // 为每个 mark 获取对应的评论
+        const marksWithComments = await Promise.all(
+          marksArray.map(async (mark) => {
+            try {
+              // 根据 markId 查询评论
+              const commentsData = await pageQueryCommentByPid(mark.id || 0, {} as any)
+              let commentsArray: NewCommentDTO[] = []
+              if (commentsData && typeof commentsData === 'object' && 'result' in commentsData) {
+                commentsArray = Array.isArray((commentsData as any).result)
+                  ? (commentsData as any).result
+                  : []
+              } else if (Array.isArray(commentsData)) {
+                commentsArray = commentsData
+              }
+
+              return {
+                ...mark,
+                comments: commentsArray,
+                commentsExpanded: false,
+                showReplyBox: false,
+              }
+            } catch (error) {
+              console.error(`Failed to fetch comments for mark ${mark.id}:`, error)
+              return {
+                ...mark,
+                comments: [],
+                commentsExpanded: false,
+                showReplyBox: false,
+              }
+            }
+          })
+        )
+
+        setMarks(marksWithComments)
+
+        // 批量预加载所有用户信息（性能优化）
+        const userOpenids: string[] = []
+
+        // 添加帖子作者
+        if (postData.ownerOpenid) {
+          userOpenids.push(postData.ownerOpenid)
         }
-        setComments(commentsArray)
+
+        // 添加所有 mark 作者
+        marksWithComments.forEach((mark) => {
+          if (mark.ownerOpenid) {
+            userOpenids.push(mark.ownerOpenid)
+          }
+
+          // 添加该 mark 下的所有 comment 作者
+          mark.comments?.forEach((comment) => {
+            if (comment.ownerOpenid) {
+              userOpenids.push(comment.ownerOpenid)
+            }
+          })
+        })
+
+        // 批量获取所有用户信息
+        if (userOpenids.length > 0) {
+          fetchUsers(userOpenids)
+        }
       } catch (error) {
         console.error('Failed to fetch post detail:', error)
       } finally {
@@ -88,37 +146,11 @@ export default function ReviewDetail() {
     fetchPostDetail()
   }, [id])
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowActionBar(window.scrollY > 100)
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % images.length)
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + images.length) % images.length)
-  }
-
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index)
-  }
-
-  const toggleUseful = () => {
-    setIsUseful(!isUseful)
-  }
-
-  const toggleLike = async () => {
+  // 点赞帖子
+  const handleLikePost = async () => {
     if (!id) return
     try {
       await likePost(Number(id))
-      setIsLiked(!isLiked)
-      // 重新获取帖子数据以更新点赞数
       const postData = await queryPostById({ id: Number(id) } as any)
       setPost(postData)
     } catch (error) {
@@ -126,28 +158,42 @@ export default function ReviewDetail() {
     }
   }
 
-  const toggleFavorite = () => {
-    setIsFavorited(!isFavorited)
-  }
-
-  const handleShare = () => {
-    alert('分享功能（演示）\n可以分享到微信、QQ、微博等平台')
-  }
-
-  const scrollToComments = () => {
-    commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
-  const handleSubmitComment = async () => {
-    if (!commentText.trim() || !id || !post?.ownerOpenid) return
-
+  // 点赞 Mark
+  const handleLikeMark = async (markId: number) => {
     try {
-      await addComment(post.ownerOpenid, Number(id), {
-        context: commentText,
-      } as any)
+      await likeMark(markId)
+      // 重新获取 marks 列表
+      const marksData = await queryMarkByPostId({ postId: Number(id) } as any)
+      let marksArray: MarkDTO[] = []
+      if (marksData && typeof marksData === 'object' && 'result' in marksData) {
+        marksArray = Array.isArray((marksData as any).result) ? (marksData as any).result : []
+      } else if (Array.isArray(marksData)) {
+        marksArray = marksData
+      }
 
-      // 重新获取评论列表
-      const commentsData = await pageQueryCommentByPid(Number(id), {} as any)
+      // 保持展开状态
+      setMarks((prev) =>
+        marksArray.map((mark) => {
+          const prevMark = prev.find((m) => m.id === mark.id)
+          return {
+            ...mark,
+            comments: prevMark?.comments || [],
+            commentsExpanded: prevMark?.commentsExpanded || false,
+            showReplyBox: prevMark?.showReplyBox || false,
+          }
+        })
+      )
+    } catch (error) {
+      console.error('Failed to like mark:', error)
+    }
+  }
+
+  // 点赞 Comment
+  const handleLikeComment = async (commentId: number, markId: number) => {
+    try {
+      await likeComment(commentId)
+      // 重新获取该 mark 的评论
+      const commentsData = await pageQueryCommentByPid(markId, {} as any)
       let commentsArray: NewCommentDTO[] = []
       if (commentsData && typeof commentsData === 'object' && 'result' in commentsData) {
         commentsArray = Array.isArray((commentsData as any).result)
@@ -156,42 +202,189 @@ export default function ReviewDetail() {
       } else if (Array.isArray(commentsData)) {
         commentsArray = commentsData
       }
-      setComments(commentsArray)
-      setCommentText('')
-      alert('评论已发表')
+
+      // 更新该 mark 的评论列表
+      setMarks((prev) =>
+        prev.map((mark) =>
+          mark.id === markId ? { ...mark, comments: commentsArray } : mark
+        )
+      )
     } catch (error) {
-      console.error('Failed to submit comment:', error)
-      alert('评论发表失败')
+      console.error('Failed to like comment:', error)
     }
   }
 
-  const renderStars = (rating: number, size: 'sm' | 'lg' = 'sm') => {
+  // 展开/折叠评论
+  const toggleComments = (markId: number) => {
+    setMarks((prev) =>
+      prev.map((mark) =>
+        mark.id === markId ? { ...mark, commentsExpanded: !mark.commentsExpanded } : mark
+      )
+    )
+  }
+
+  // 显示/隐藏回复框
+  const toggleReplyBox = (markId: number) => {
+    setMarks((prev) =>
+      prev.map((mark) =>
+        mark.id === markId ? { ...mark, showReplyBox: !mark.showReplyBox } : mark
+      )
+    )
+  }
+
+  // 发表 Mark
+  const handleSubmitMark = async () => {
+    if (!user?.openid || !id || !newMarkContent.trim()) {
+      alert('请输入评论内容')
+      return
+    }
+
+    setSubmittingMark(true)
+    try {
+      await addMark(user.openid, Number(id), Number(id), {
+        ownerOpenid: user.openid,
+        postId: Number(id),
+        context: newMarkContent.trim(),
+        score: newMarkScore,
+      })
+
+      // 重新获取评分列表
+      const marksData = await queryMarkByPostId({ postId: Number(id) } as any)
+      let marksArray: MarkDTO[] = []
+      if (marksData && typeof marksData === 'object' && 'result' in marksData) {
+        marksArray = Array.isArray((marksData as any).result) ? (marksData as any).result : []
+      } else if (Array.isArray(marksData)) {
+        marksArray = marksData
+      }
+
+      const marksWithComments = await Promise.all(
+        marksArray.map(async (mark) => {
+          try {
+            const commentsData = await pageQueryCommentByPid(mark.id || 0, {} as any)
+            let commentsArray: NewCommentDTO[] = []
+            if (commentsData && typeof commentsData === 'object' && 'result' in commentsData) {
+              commentsArray = Array.isArray((commentsData as any).result)
+                ? (commentsData as any).result
+                : []
+            } else if (Array.isArray(commentsData)) {
+              commentsArray = commentsData
+            }
+
+            return {
+              ...mark,
+              comments: commentsArray,
+              commentsExpanded: false,
+              showReplyBox: false,
+            }
+          } catch (error) {
+            return {
+              ...mark,
+              comments: [],
+              commentsExpanded: false,
+              showReplyBox: false,
+            }
+          }
+        })
+      )
+
+      setMarks(marksWithComments)
+      setNewMarkContent('')
+      setNewMarkScore(5)
+      setShowMarkForm(false)
+      alert('评分已发表！')
+    } catch (error) {
+      console.error('Failed to submit mark:', error)
+      alert('评分发表失败')
+    } finally {
+      setSubmittingMark(false)
+    }
+  }
+
+  // 回复 Mark（发表 Comment）
+  const handleReplyToMark = async (markId: number) => {
+    const content = replyContent[markId]
+    if (!user?.openid || !content?.trim()) {
+      alert('请输入回复内容')
+      return
+    }
+
+    try {
+      await addComment(user.openid, markId, {
+        ownerOpenid: user.openid,
+        pid: markId,
+        context: content.trim(),
+      })
+
+      // 重新获取该 mark 的评论
+      const commentsData = await pageQueryCommentByPid(markId, {} as any)
+      let commentsArray: NewCommentDTO[] = []
+      if (commentsData && typeof commentsData === 'object' && 'result' in commentsData) {
+        commentsArray = Array.isArray((commentsData as any).result)
+          ? (commentsData as any).result
+          : []
+      } else if (Array.isArray(commentsData)) {
+        commentsArray = commentsData
+      }
+
+      // 更新该 mark 的评论列表
+      setMarks((prev) =>
+        prev.map((mark) =>
+          mark.id === markId
+            ? { ...mark, comments: commentsArray, showReplyBox: false, commentsExpanded: true }
+            : mark
+        )
+      )
+
+      setReplyContent((prev) => ({ ...prev, [markId]: '' }))
+      alert('回复已发表！')
+    } catch (error) {
+      console.error('Failed to reply to mark:', error)
+      alert('回复发表失败')
+    }
+  }
+
+  // 渲染星级
+  const renderStars = (rating: number, size: number = 16, interactive: boolean = false, onChange?: (rating: number) => void) => {
     return (
-      <div className={size === 'lg' ? styles.starsLarge : styles.stars}>
+      <div className={styles.stars}>
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            size={size === 'lg' ? 24 : 14}
+            size={size}
             className={star <= rating ? styles.starFilled : styles.starEmpty}
             fill={star <= rating ? 'currentColor' : 'none'}
+            onClick={interactive && onChange ? () => onChange(star) : undefined}
+            style={interactive ? { cursor: 'pointer' } : undefined}
           />
         ))}
       </div>
     )
   }
 
+  // 计算评分分布
+  const getScoreDistribution = () => {
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    marks.forEach((mark) => {
+      const score = mark.score || 5
+      if (score >= 1 && score <= 5) {
+        distribution[score as 1 | 2 | 3 | 4 | 5]++
+      }
+    })
+    return distribution
+  }
+
+  // 计算平均分
+  const getAverageScore = () => {
+    if (marks.length === 0) return 0
+    const total = marks.reduce((sum, mark) => sum + (mark.score || 0), 0)
+    return (total / marks.length).toFixed(1)
+  }
+
   // 显示加载状态
   if (loading) {
     return (
-      <div className={styles.reviewDetail}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-          }}
-        >
+      <div className={styles.container}>
+        <div className={styles.loadingContainer}>
           <Loading size="lg" />
         </div>
       </div>
@@ -201,19 +394,10 @@ export default function ReviewDetail() {
   // 如果没有数据
   if (!post) {
     return (
-      <div className={styles.reviewDetail}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-            flexDirection: 'column',
-            gap: '1rem',
-          }}
-        >
+      <div className={styles.container}>
+        <div className={styles.emptyContainer}>
           <p>帖子不存在</p>
-          <button onClick={() => navigate(-1)} style={{ padding: '0.5rem 1rem' }}>
+          <button onClick={() => navigate(-1)} className={styles.backButton}>
             返回
           </button>
         </div>
@@ -221,34 +405,24 @@ export default function ReviewDetail() {
     )
   }
 
-  // 计算平均评分
-  const averageRating = marks.length > 0
-    ? Math.min(5, Math.ceil(marks.reduce((sum, mark) => sum + (mark.score || 0), 0) / marks.length))
-    : 0
-
-  // 计算详细评分（根据 marks 的 score 分布）
-  const detailedRatings = {
-    environment: averageRating,
-    service: averageRating,
-    price: averageRating,
-    taste: averageRating,
-  }
+  const scoreDistribution = getScoreDistribution()
+  const averageScore = getAverageScore()
 
   return (
-    <div className={styles.reviewDetail}>
+    <div className={styles.container}>
       {/* Top Nav */}
-      <div className={styles.detailNav}>
-        <button className={styles.backBtn} onClick={() => navigate(-1)}>
-          <ArrowLeft size={18} />
+      <div className={styles.nav}>
+        <button className={styles.navBackBtn} onClick={() => navigate(-1)}>
+          <ArrowLeft size={20} />
           <span>返回</span>
         </button>
         <div className={styles.navActions}>
-          <button className={styles.navIconBtn} onClick={handleShare}>
+          <button className={styles.navIconBtn} onClick={() => alert('分享功能')}>
             <Share2 size={20} />
           </button>
           <button
             className={`${styles.navIconBtn} ${isFavorited ? styles.active : ''}`}
-            onClick={toggleFavorite}
+            onClick={() => setIsFavorited(!isFavorited)}
           >
             <Heart size={20} fill={isFavorited ? 'currentColor' : 'none'} />
           </button>
@@ -256,175 +430,262 @@ export default function ReviewDetail() {
       </div>
 
       {/* Main Content */}
-      <div className={styles.detailContent}>
-        {/* Image Gallery */}
-        {images.length > 0 && (
-          <div className={styles.imageGallery}>
-            <div className={styles.carousel}>
-              <div
-                className={styles.carouselInner}
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-              >
-                {images.map((image, index) => (
-                  <div key={index} className={styles.carouselItem}>
-                    <PostImage src={image} alt={`${post.context} ${index + 1}`} className={styles.carouselImage} />
-                  </div>
-                ))}
+      <div className={styles.content}>
+        {/* 左侧主内容区 */}
+        <div className={styles.mainSection}>
+          {/* 主帖区域 - 虎扑风格 */}
+          <div className={styles.postCard}>
+            {/* 楼主信息 */}
+            <div className={styles.postHeader}>
+              <UserAvatar
+                openid={post.ownerOpenid}
+                className={styles.postAvatar}
+              />
+              <div className={styles.postAuthorInfo}>
+                <div className={styles.postAuthorName}>
+                  <UserName openid={post.ownerOpenid} fallback="匿名用户" />
+                </div>
+                <div className={styles.postTime}>{post.createTime || '刚刚'}</div>
               </div>
-              {images.length > 1 && (
-                <>
-                  <div className={styles.carouselControls}>
-                    <button className={styles.carouselBtn} onClick={prevSlide}>
-                      <ChevronLeft size={20} />
-                    </button>
-                    <button className={styles.carouselBtn} onClick={nextSlide}>
-                      <ChevronRight size={20} />
-                    </button>
-                  </div>
-                  <div className={styles.carouselIndicators}>
-                    {images.map((_, index) => (
-                      <span
-                        key={index}
-                        className={`${styles.indicator} ${index === currentSlide ? styles.active : ''}`}
-                        onClick={() => goToSlide(index)}
-                      />
-                    ))}
-                  </div>
-                </>
+            </div>
+
+            {/* 帖子内容 */}
+            <div className={styles.postContent}>
+              <h1 className={styles.postTitle}>{post.context?.substring(0, 50) || '帖子标题'}</h1>
+              <p className={styles.postText}>{post.context}</p>
+
+              {/* 图片 */}
+              {post.image && (
+                <div className={styles.postImages}>
+                  <PostImage src={post.image} alt="帖子图片" className={styles.postImage} />
+                </div>
               )}
             </div>
-          </div>
-        )}
 
-        {/* Place Info */}
-        <div className={styles.placeInfo}>
-          <div className={styles.placeHeader}>
-            <div>
-              <h1 className={styles.placeTitle}>{post.context?.substring(0, 30) || '帖子标题'}</h1>
-              <span className={styles.placeCategory}>贴文</span>
+            {/* 底部操作 */}
+            <div className={styles.postActions}>
+              <button className={styles.postActionBtn} onClick={handleLikePost}>
+                <ThumbsUp size={18} />
+                <span>{post.likeCount || 0}</span>
+              </button>
+              <button className={styles.postActionBtn} onClick={() => setShowMarkForm(true)}>
+                <MessageCircle size={18} />
+                <span>{marks.length}</span>
+              </button>
+              <button className={styles.postActionBtn} onClick={() => alert('分享功能')}>
+                <Share2 size={18} />
+                <span>分享</span>
+              </button>
             </div>
           </div>
 
-          <div className={styles.ratingDisplay}>
-            <div className={styles.ratingNumber}>{averageRating}</div>
-            <div className={styles.ratingDetails}>
-              {renderStars(averageRating, 'lg')}
-              <div className={styles.reviewCountText}>基于 {marks.length} 条评分</div>
+          {/* 发表评分区域 */}
+          {showMarkForm ? (
+            <div className={styles.markForm}>
+              <h3 className={styles.markFormTitle}>发表你的评分</h3>
+              <div className={styles.markFormRating}>
+                <span>评分：</span>
+                {renderStars(newMarkScore, 24, true, setNewMarkScore)}
+                <span className={styles.markFormRatingText}>{newMarkScore} 分</span>
+              </div>
+              <textarea
+                className={styles.markFormTextarea}
+                placeholder="说说你的看法..."
+                value={newMarkContent}
+                onChange={(e) => setNewMarkContent(e.target.value)}
+                rows={4}
+              />
+              <div className={styles.markFormActions}>
+                <button
+                  className={styles.markFormBtnCancel}
+                  onClick={() => {
+                    setShowMarkForm(false)
+                    setNewMarkContent('')
+                    setNewMarkScore(5)
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  className={styles.markFormBtnSubmit}
+                  onClick={handleSubmitMark}
+                  disabled={submittingMark}
+                >
+                  {submittingMark ? '发表中...' : '发表评分'}
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className={styles.markFormPrompt}>
+              <button className={styles.markFormPromptBtn} onClick={() => setShowMarkForm(true)}>
+                <MessageCircle size={20} />
+                <span>发表你的评分</span>
+              </button>
+            </div>
+          )}
 
-          <div className={styles.placeAddress}>
-            <MapPin size={16} />
-            <span>发布者: {post.ownerOpenid || '匿名用户'}</span>
-          </div>
-        </div>
+          {/* Mark 列表（主回复） */}
+          <div className={styles.marksSection}>
+            <h2 className={styles.marksSectionTitle}>全部评分 ({marks.length})</h2>
 
-        {/* Detailed Ratings */}
-        <div className={styles.detailedRatings}>
-          <h3 className={styles.sectionTitle}>详细评分</h3>
-          {Object.entries(detailedRatings).map(([key, value]) => {
-            const labels: Record<string, string> = {
-              environment: '环境',
-              service: '服务',
-              price: '价格',
-              taste: '味道',
-            }
-            return (
-              <div key={key} className={styles.ratingItem}>
-                <div className={styles.ratingLabel}>{labels[key]}</div>
-                <div className={styles.ratingBarWrapper}>
-                  <div className={styles.ratingBar} style={{ width: `${(value / 5) * 100}%` }} />
+            {marks.length === 0 ? (
+              <div className={styles.emptyMarks}>
+                <p>还没有评分，快来发表第一条吧！</p>
+              </div>
+            ) : (
+              marks.map((mark, index) => (
+                <div key={mark.id} className={styles.markCard}>
+                  {/* Mark 头部 */}
+                  <div className={styles.markHeader}>
+                    <div className={styles.markFloor}>#{index + 1}</div>
+                    <UserAvatar
+                      openid={mark.ownerOpenid}
+                      className={styles.markAvatar}
+                    />
+                    <div className={styles.markAuthorInfo}>
+                      <div className={styles.markAuthorName}>
+                        <UserName openid={mark.ownerOpenid} fallback="匿名用户" />
+                      </div>
+                      <div className={styles.markTime}>{mark.createTime || '刚刚'}</div>
+                    </div>
+                    <div className={styles.markRating}>
+                      {renderStars(mark.score || 5, 18)}
+                      <span className={styles.markRatingText}>{mark.score || 5} 分</span>
+                    </div>
+                  </div>
+
+                  {/* Mark 内容 */}
+                  <div className={styles.markContent}>
+                    <p>{mark.context}</p>
+                  </div>
+
+                  {/* Mark 操作 */}
+                  <div className={styles.markActions}>
+                    <button
+                      className={styles.markActionBtn}
+                      onClick={() => handleLikeMark(mark.id || 0)}
+                    >
+                      <ThumbsUp size={16} />
+                      <span>{mark.likeCount || 0}</span>
+                    </button>
+                    <button
+                      className={styles.markActionBtn}
+                      onClick={() => toggleReplyBox(mark.id || 0)}
+                    >
+                      <MessageCircle size={16} />
+                      <span>回复</span>
+                    </button>
+                    {(mark.comments?.length || 0) > 0 && (
+                      <button
+                        className={styles.markActionBtn}
+                        onClick={() => toggleComments(mark.id || 0)}
+                      >
+                        {mark.commentsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        <span>{mark.comments?.length || 0} 条回复</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 回复框 */}
+                  {mark.showReplyBox && (
+                    <div className={styles.replyBox}>
+                      <textarea
+                        className={styles.replyTextarea}
+                        placeholder="写下你的回复..."
+                        value={replyContent[mark.id || 0] || ''}
+                        onChange={(e) =>
+                          setReplyContent((prev) => ({
+                            ...prev,
+                            [mark.id || 0]: e.target.value,
+                          }))
+                        }
+                        rows={3}
+                      />
+                      <div className={styles.replyActions}>
+                        <button
+                          className={styles.replyBtnCancel}
+                          onClick={() => toggleReplyBox(mark.id || 0)}
+                        >
+                          取消
+                        </button>
+                        <button
+                          className={styles.replyBtnSubmit}
+                          onClick={() => handleReplyToMark(mark.id || 0)}
+                        >
+                          <Send size={16} />
+                          <span>发表</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comment 列表（楼中楼） */}
+                  {mark.commentsExpanded && (mark.comments?.length || 0) > 0 && (
+                    <div className={styles.commentsSection}>
+                      {mark.comments?.map((comment) => (
+                        <div key={comment.id} className={styles.commentCard}>
+                          <UserAvatar
+                            openid={comment.ownerOpenid}
+                            className={styles.commentAvatar}
+                          />
+                          <div className={styles.commentMain}>
+                            <div className={styles.commentHeader}>
+                              <span className={styles.commentAuthor}>
+                                <UserName openid={comment.ownerOpenid} fallback="匿名用户" />
+                              </span>
+                              <span className={styles.commentTime}>{comment.createTime || '刚刚'}</span>
+                            </div>
+                            <div className={styles.commentContent}>{comment.context}</div>
+                            <div className={styles.commentActions}>
+                              <button
+                                className={styles.commentActionBtn}
+                                onClick={() => handleLikeComment(comment.id || 0, mark.id || 0)}
+                              >
+                                <ThumbsUp size={14} />
+                                <span>{comment.likeCount || 0}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className={styles.ratingValue}>{value}</div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* 右侧边栏 - 评分统计 */}
+        <div className={styles.sidebar}>
+          <div className={styles.statsCard}>
+            <h3 className={styles.statsTitle}>评分统计</h3>
+            <div className={styles.averageScore}>
+              <div className={styles.averageScoreNumber}>{averageScore}</div>
+              <div className={styles.averageScoreStars}>
+                {renderStars(Math.round(Number(averageScore)), 20)}
               </div>
-            )
-          })}
-        </div>
-
-        {/* Review Content */}
-        <div className={styles.reviewContent}>
-          <div className={styles.reviewerHeader}>
-            <Avatar
-              src={post.ownerOpenid}
-              fallbackSeed={post.ownerOpenid || 'user'}
-              alt={post.ownerOpenid || '用户'}
-              className={styles.reviewerAvatar}
-            />
-            <div className={styles.reviewerInfo}>
-              <div className={styles.reviewerName}>{post.ownerOpenid || '匿名用户'}</div>
-              <div className={styles.reviewTime}>{post.createTime || '刚刚'}</div>
+              <div className={styles.averageScoreText}>{marks.length} 条评分</div>
+            </div>
+            <div className={styles.scoreDistribution}>
+              {[5, 4, 3, 2, 1].map((score) => {
+                const count = scoreDistribution[score as 1 | 2 | 3 | 4 | 5]
+                const percentage = marks.length > 0 ? (count / marks.length) * 100 : 0
+                return (
+                  <div key={score} className={styles.scoreDistributionItem}>
+                    <span className={styles.scoreLabel}>{score} 星</span>
+                    <div className={styles.scoreBar}>
+                      <div
+                        className={styles.scoreBarFill}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <span className={styles.scoreCount}>{count}</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
-
-          <div className={styles.reviewText}>{post.context}</div>
-
-          <div className={styles.usefulSection}>
-            <button className={`${styles.usefulBtn} ${isUseful ? styles.active : ''}`} onClick={toggleUseful}>
-              <ThumbsUp size={14} />
-              <span>{isUseful ? (post.likeCount || 0) + 1 : post.likeCount || 0}</span>
-            </button>
-            <span>人觉得有用</span>
-          </div>
-        </div>
-
-        {/* Comments */}
-        <div className={styles.commentsSection} ref={commentsRef}>
-          <h3 className={styles.sectionTitle}>全部评论 ({comments.length})</h3>
-
-          {comments.map((comment, index) => (
-            <div key={comment.id} className={styles.commentItem} style={{ animationDelay: `${index * 80}ms` }}>
-              <div className={styles.commentHeader}>
-                <Avatar
-                  src={comment.ownerOpenid}
-                  fallbackSeed={comment.ownerOpenid || 'user'}
-                  alt={comment.ownerOpenid || '用户'}
-                  className={styles.commentAvatar}
-                />
-                <span className={styles.commentAuthor}>{comment.ownerOpenid || '匿名用户'}</span>
-                <span className={styles.commentTime}>· {comment.createTime || '刚刚'}</span>
-              </div>
-              <div className={styles.commentText}>{comment.context}</div>
-            </div>
-          ))}
-
-          <div className={styles.commentInputWrapper}>
-            <textarea
-              className={styles.commentInput}
-              placeholder="写下你的评论..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-            />
-            <div className={styles.commentActions}>
-              <button className={styles.commentBtnCancel} onClick={() => setCommentText('')}>
-                取消
-              </button>
-              <button className={styles.commentBtnSubmit} onClick={handleSubmitComment}>
-                发表评论
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Action Bar */}
-      <div className={`${styles.actionBar} ${showActionBar ? styles.show : ''}`}>
-        <div className={styles.actionBarContent}>
-          <button className={`${styles.actionBtn} ${isLiked ? styles.active : ''}`} onClick={toggleLike}>
-            <ThumbsUp size={20} />
-            <span>点赞</span>
-          </button>
-          <button className={styles.actionBtn} onClick={scrollToComments}>
-            <MessageCircle size={20} />
-            <span>评论</span>
-          </button>
-          <button className={`${styles.actionBtn} ${isFavorited ? styles.active : ''}`} onClick={toggleFavorite}>
-            <Heart size={20} fill={isFavorited ? 'currentColor' : 'none'} />
-            <span>收藏</span>
-          </button>
-          <button className={styles.actionBtn} onClick={handleShare}>
-            <Share2 size={20} />
-            <span>分享</span>
-          </button>
         </div>
       </div>
     </div>

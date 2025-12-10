@@ -65,6 +65,16 @@ export default function AppRouter() {
         }
       />
 
+      {/* 具体路径必须在动态路径之前 */}
+      <Route
+        path="/review/create"
+        element={
+          <ProtectedRoute>
+            <ReviewCreate />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/review/:id"
         element={
@@ -93,19 +103,20 @@ export default function AppRouter() {
       />
 
       <Route
-        path="/review/create"
-        element={
-          <ProtectedRoute>
-            <ReviewCreate />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
         path="/posts"
         element={
           <ProtectedRoute>
             <PostList />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 具体路径必须在动态路径之前 */}
+      <Route
+        path="/post/create"
+        element={
+          <ProtectedRoute>
+            <PostCreate />
           </ProtectedRoute>
         }
       />
@@ -115,15 +126,6 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <PostDetail />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/post/create"
-        element={
-          <ProtectedRoute>
-            <PostCreate />
           </ProtectedRoute>
         }
       />

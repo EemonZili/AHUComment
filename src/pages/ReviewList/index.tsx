@@ -16,8 +16,9 @@ import {
 } from 'lucide-react'
 import { listPostCategories, pageQueryPostByCategoryId } from '@/services'
 import { useAuthStore } from '@/store/auth'
+import { useUserCache } from '@/store/userCache'
 import type { ReviewDTO, PlaceDTO, PostDTO, PostCategoryDTO } from '@/types'
-import { Loading, Button, Avatar, PostImage } from '@/components'
+import { Loading, Button, Avatar, PostImage, UserAvatar, UserName } from '@/components'
 import styles from './ReviewList.module.css'
 
 const sortOptions = [
@@ -29,6 +30,7 @@ const sortOptions = [
 export default function ReviewList() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const { fetchUsers } = useUserCache()
 
   const [reviews, setReviews] = useState<ReviewDTO[]>([])
   const [hotReviews, setHotReviews] = useState<ReviewDTO[]>([])
@@ -52,13 +54,25 @@ export default function ReviewList() {
     setLoading(true)
     try {
       let allPosts: PostDTO[] = []
+      let totalCount = 0
 
       if (activeCategory === '全部') {
-        // 获取所有分类的帖子
-        for (const category of postCategories) {
-          const data = await pageQueryPostByCategoryId({
-            categoryId: category.id || 0,
-          })
+        // 获取所有分类的帖子 - 使用并发请求优化性能
+        // 注意：全部分类时，不使用后端分页，而是获取所有数据后前端分页
+        const results = await Promise.all(
+          postCategories.map((category) =>
+            pageQueryPostByCategoryId({
+              categoryId: category.id || 0,
+            } as any).catch((error) => {
+              console.error(`Failed to fetch posts for category ${category.id}:`, error)
+              return null
+            })
+          )
+        )
+
+        // 合并所有结果
+        results.forEach((data) => {
+          if (!data) return
 
           if (data && typeof data === 'object' && 'result' in data) {
             const postsArray = Array.isArray((data as any).result) ? (data as any).result : []
@@ -66,17 +80,25 @@ export default function ReviewList() {
           } else if (Array.isArray(data)) {
             allPosts.push(...data)
           }
-        }
+        })
+
+        // 前端分页
+        totalCount = allPosts.length
       } else {
         // 获取特定分类的帖子
         const data = await pageQueryPostByCategoryId({
           categoryId: activeCategoryId,
-        })
+          pageNum: currentPage,
+          pageSize: pageSize,
+        } as any)
 
         if (data && typeof data === 'object' && 'result' in data) {
           allPosts = Array.isArray((data as any).result) ? (data as any).result : []
+          // 尝试从响应中获取总数
+          totalCount = (data as any).total || allPosts.length
         } else if (Array.isArray(data)) {
           allPosts = data
+          totalCount = data.length
         }
       }
 
@@ -90,6 +112,13 @@ export default function ReviewList() {
           const bMarkCount = parseInt(b.markCount || '0')
           return bMarkCount - aMarkCount
         })
+      }
+
+      // 前端分页：只在"全部"分类时进行前端分页
+      if (activeCategory === '全部') {
+        const startIndex = (currentPage - 1) * pageSize
+        const endIndex = startIndex + pageSize
+        sortedPosts = sortedPosts.slice(startIndex, endIndex)
       }
 
       // 转换 PostDTO 为 ReviewDTO 格式
@@ -112,7 +141,13 @@ export default function ReviewList() {
       }))
 
       setReviews(reviewsData)
-      setTotal(reviewsData.length)
+      setTotal(totalCount)
+
+      // 批量预加载所有用户信息（性能优化）
+      const userOpenids = reviewsData.map((review) => review.userId).filter(Boolean)
+      if (userOpenids.length > 0) {
+        fetchUsers(userOpenids)
+      }
     } catch (error) {
       console.error('Failed to fetch reviews:', error)
       setReviews([])
@@ -141,11 +176,22 @@ export default function ReviewList() {
     if (postCategories.length === 0) return
 
     try {
+      // 并发获取前3个分类的帖子
+      const results = await Promise.all(
+        postCategories.slice(0, 3).map((category) =>
+          pageQueryPostByCategoryId({
+            categoryId: category.id || 0,
+          } as any).catch((error) => {
+            console.error(`Failed to fetch hot posts for category ${category.id}:`, error)
+            return null
+          })
+        )
+      )
+
+      // 合并所有结果
       const allPosts: PostDTO[] = []
-      for (const category of postCategories.slice(0, 3)) {
-        const data = await pageQueryPostByCategoryId({
-          categoryId: category.id || 0,
-        })
+      results.forEach((data) => {
+        if (!data) return
 
         if (data && typeof data === 'object' && 'result' in data) {
           const postsArray = Array.isArray((data as any).result) ? (data as any).result : []
@@ -153,7 +199,7 @@ export default function ReviewList() {
         } else if (Array.isArray(data)) {
           allPosts.push(...data)
         }
-      }
+      })
 
       // 按点赞数排序
       const sorted = allPosts.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
@@ -178,6 +224,12 @@ export default function ReviewList() {
       }))
 
       setHotReviews(hotReviewsData)
+
+      // 批量预加载热门帖子的用户信息（性能优化）
+      const userOpenids = hotReviewsData.map((review) => review.userId).filter(Boolean)
+      if (userOpenids.length > 0) {
+        fetchUsers(userOpenids)
+      }
     } catch (error) {
       console.error('Failed to fetch hot reviews:', error)
     }
@@ -185,14 +237,21 @@ export default function ReviewList() {
 
   useEffect(() => {
     fetchCategories()
-  }, [])
+  }, []) // 只在mount时执行一次
 
   useEffect(() => {
     if (postCategories.length > 0) {
       fetchReviews()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postCategories.length, activeCategory, sortBy, currentPage]) // 移除 postCategories，只依赖长度
+
+  useEffect(() => {
+    if (postCategories.length > 0) {
       fetchHotReviews()
     }
-  }, [postCategories, activeCategory, sortBy, currentPage])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postCategories.length]) // 只在分类加载完成时执行一次
 
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category)
@@ -409,14 +468,14 @@ export default function ReviewList() {
                   {/* Review Header */}
                   <div className={styles.reviewHeader}>
                     <div className={styles.reviewUser}>
-                      <Avatar
-                        src={review.userAvatar}
-                        fallbackSeed={review.userId || review.userName}
-                        alt={review.userName}
+                      <UserAvatar
+                        openid={review.userId}
                         className={styles.reviewUserAvatar}
                       />
                       <div className={styles.reviewUserInfo}>
-                        <h4 className={styles.reviewUserName}>{review.userName}</h4>
+                        <h4 className={styles.reviewUserName}>
+                          <UserName openid={review.userId} fallback={review.userName} />
+                        </h4>
                         <p className={styles.reviewTime}>{review.createTime}</p>
                       </div>
                     </div>

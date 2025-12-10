@@ -36,11 +36,10 @@ export default function ReviewCreate() {
   const [selectedCategory, setSelectedCategory] = useState<PostCategoryDTO | null>(null)
 
   // Review form data
-  const [overallRating, setOverallRating] = useState(5)
   const [content, setContent] = useState('')
-  const [images, setImages] = useState<string[]>([]) // 用于显示的图片（本地 blob URL）
-  const [serverImages, setServerImages] = useState<string[]>([]) // 服务器返回的 URL（用于提交）
-  const [uploadingImages, setUploadingImages] = useState(false)
+  const [image, setImage] = useState<string>('') // 用于显示的图片（本地 blob URL）
+  const [serverImage, setServerImage] = useState<string>('') // 服务器返回的 URL（用于提交）
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [customTag, setCustomTag] = useState('')
 
@@ -69,53 +68,41 @@ export default function ReviewCreate() {
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files) return
+    const file = e.target.files?.[0]
+    if (!file) return
 
     // 立即显示本地预览
-    const localUrls = Array.from(files).map(file => URL.createObjectURL(file))
-    setImages((prev) => [...prev, ...localUrls])
+    const localUrl = URL.createObjectURL(file)
+    setImage(localUrl)
 
-    setUploadingImages(true)
+    setUploadingImage(true)
     try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        try {
-          // 上传图片到服务器
-          const imageUrl = await uploadPostPicture(file)
-          return imageUrl
-        } catch (error) {
-          console.error('Failed to upload image:', error)
-          return null
-        }
-      })
-
-      const uploadedUrls = await Promise.all(uploadPromises)
-      const validUrls = uploadedUrls.filter((url): url is string => url !== null)
-
-      // 保存服务器 URL（用于提交），但保持显示本地预览
-      setServerImages((prev) => [...prev, ...validUrls])
-
-      if (validUrls.length < uploadedUrls.length) {
-        alert(`成功上传 ${validUrls.length}/${uploadedUrls.length} 张图片`)
-      }
+      // 上传图片到服务器
+      const imageUrl = await uploadPostPicture(file)
+      setServerImage(imageUrl)
+      alert('图片上传成功！')
     } catch (error) {
-      console.error('Failed to upload images:', error)
+      console.error('Failed to upload image:', error)
       alert('图片上传失败，请重试')
+      // 上传失败则清除本地预览
+      if (localUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(localUrl)
+      }
+      setImage('')
     } finally {
-      setUploadingImages(false)
+      setUploadingImage(false)
       // 重置 input value，允许重复选择同一文件
       e.target.value = ''
     }
   }
 
-  const handleRemoveImage = (index: number) => {
-    const imageUrl = images[index]
+  const handleRemoveImage = () => {
     // 如果是 blob URL，需要释放
-    if (imageUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(imageUrl)
+    if (image.startsWith('blob:')) {
+      URL.revokeObjectURL(image)
     }
-    setImages((prev) => prev.filter((_, i) => i !== index))
-    setServerImages((prev) => prev.filter((_, i) => i !== index))
+    setImage('')
+    setServerImage('')
   }
 
   const handleToggleTag = (tag: string) => {
@@ -153,7 +140,7 @@ export default function ReviewCreate() {
       const postData = {
         categoryId: selectedCategory.id,
         context: content.trim(),
-        image: serverImages.length > 0 ? serverImages[0] : '', // 使用服务器 URL
+        image: serverImage || '', // 使用服务器 URL
         ownerOpenid: user.openid,
       }
 
@@ -164,15 +151,27 @@ export default function ReviewCreate() {
         postData as any
       )
 
-      // 清理所有 blob URLs
-      images.forEach(url => {
-        if (url.startsWith('blob:')) {
-          URL.revokeObjectURL(url)
-        }
-      })
+      console.log('创建的帖子返回:', createdPost)
+
+      // 清理 blob URL
+      if (image.startsWith('blob:')) {
+        URL.revokeObjectURL(image)
+      }
 
       alert('点评发布成功！')
-      navigate('/') // 跳转到首页
+
+      // 跳转到新帖子详情页
+      // 检查不同的ID字段
+      const postId = createdPost?.id || createdPost?.postId || (createdPost as any)?.data?.id
+      console.log('提取的帖子ID:', postId)
+
+      if (postId) {
+        console.log('跳转到详情页:', `/review/${postId}`)
+        navigate(`/review/${postId}`)
+      } else {
+        console.log('没有找到帖子ID，跳转到首页')
+        navigate('/')
+      }
     } catch (error) {
       console.error('Failed to create post:', error)
       alert('发布失败，请重试')
@@ -181,26 +180,6 @@ export default function ReviewCreate() {
     }
   }
 
-  const renderStarRating = (
-    rating: number,
-    onChange: (rating: number) => void,
-    size: number = 32
-  ) => {
-    return (
-      <div className={styles.starRating}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            size={size}
-            className={star <= rating ? styles.starFilled : styles.starEmpty}
-            fill={star <= rating ? 'currentColor' : 'none'}
-            onClick={() => onChange(star)}
-            style={{ cursor: 'pointer' }}
-          />
-        ))}
-      </div>
-    )
-  }
 
   return (
     <div className={styles.container}>
@@ -238,15 +217,6 @@ export default function ReviewCreate() {
           )}
         </section>
 
-        {/* Overall Rating */}
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>综合评分</h2>
-          <div className={styles.ratingContainer}>
-            {renderStarRating(overallRating, setOverallRating)}
-            <span className={styles.ratingText}>{overallRating} 分</span>
-          </div>
-        </section>
-
         {/* Content */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>点评内容</h2>
@@ -266,28 +236,27 @@ export default function ReviewCreate() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>上传图片</h2>
           <div className={styles.imageUpload}>
-            {images.map((image, index) => (
-              <div key={index} className={styles.imagePreview}>
-                <img src={image} alt={`Upload ${index + 1}`} />
+            {image && (
+              <div className={styles.imagePreview}>
+                <img src={image} alt="Upload" />
                 <button
                   className={styles.removeImageButton}
-                  onClick={() => handleRemoveImage(index)}
+                  onClick={handleRemoveImage}
                 >
                   <X size={16} />
                 </button>
               </div>
-            ))}
-            {images.length < 9 && (
-              <label className={`${styles.uploadButton} ${uploadingImages ? styles.uploading : ''}`}>
+            )}
+            {!image && (
+              <label className={`${styles.uploadButton} ${uploadingImage ? styles.uploading : ''}`}>
                 <input
                   type="file"
                   accept="image/*"
-                  multiple
                   onChange={handleImageUpload}
-                  disabled={uploadingImages}
+                  disabled={uploadingImage}
                   style={{ display: 'none' }}
                 />
-                {uploadingImages ? (
+                {uploadingImage ? (
                   <>
                     <Loading size="sm" />
                     <span>上传中...</span>
@@ -301,7 +270,7 @@ export default function ReviewCreate() {
               </label>
             )}
           </div>
-          <p className={styles.uploadHint}>最多上传9张图片</p>
+          <p className={styles.uploadHint}>只能上传一张图片</p>
         </section>
 
         {/* Tags */}
