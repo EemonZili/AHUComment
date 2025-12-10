@@ -405,14 +405,6 @@ export default function Profile() {
             <ChevronRight className={styles.linkArrow} size={20} />
           </div>
 
-          <div className={styles.linkItem} onClick={() => navigate('/posts')}>
-            <div className={styles.linkLeft}>
-              <MessageCircle className={styles.linkIcon} size={20} />
-              <span className={styles.linkText}>我的贴文</span>
-            </div>
-            <ChevronRight className={styles.linkArrow} size={20} />
-          </div>
-
           <div className={styles.linkItem} onClick={() => alert('我的收藏')}>
             <div className={styles.linkLeft}>
               <Star className={styles.linkIcon} size={20} />
