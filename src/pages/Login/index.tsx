@@ -85,38 +85,30 @@ export default function Login() {
   )
 
   // WebSocket connection
+  // WebSocket connection
   useEffect(() => {
     if (!sessionId) return
 
-    const ws = createLoginWebSocket(sessionId)
+    // 用于存储扫码确认超时的计时器ID
+    let confirmationTimeout: any = null
 
-    // 设置连接超时检测（5秒）
-    const connectionTimeout = setTimeout(() => {
-      if (ws) {
-        console.warn('WebSocket connection timeout')
-        setStatusText('连接超时,请检查网络或联系管理员')
-      }
-    }, 5000)
+    const ws = createLoginWebSocket(sessionId)
 
     ws.connect()
 
     ws.onMessage((data) => {
       console.log('WebSocket message received:', data)
 
-      // 清除连接超时定时器
-      if (connectionTimeout) {
-        clearTimeout(connectionTimeout)
+      // 一旦收到新的消息（如CONFIRMED, EXPIRED等），就清除等待确认的计时器
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout)
       }
 
       // 处理后端直接返回的登录成功响应
       if (data.success && data.data && data.data.tokenValue) {
         console.log('Login successful, token received:', data.data.tokenValue)
-
-        // 提取 openId (loginId)
         const openId = data.data.loginId
         console.log('OpenId (loginId):', openId)
-
-        // 直接使用后端返回的 token 和 openId 登录
         handleLoginSuccess(data.data.tokenValue, openId)
         return
       }
@@ -125,6 +117,14 @@ export default function Login() {
       if (data.type === 'SCANNED') {
         setQrState('scanned')
         setStatusText('扫码成功，请在手机上确认登录')
+        
+        // 在用户扫码后，启动一个超时计时器
+        // 如果用户在 (例如) 60秒 内未确认，则提示超时
+        confirmationTimeout = setTimeout(() => {
+          setQrState('expired')
+          setStatusText('登录确认超时，请刷新二维码重试')
+        }, 60000) // 设置为60秒，5秒对于用户操作来说太短
+
       } else if (data.type === 'CONFIRMED') {
         const openId = data.openId || data.openid
 
@@ -153,12 +153,14 @@ export default function Login() {
     })
 
     return () => {
-      if (connectionTimeout) {
-        clearTimeout(connectionTimeout)
+      // 在组件卸载时，确保清除任何可能存在的计时器
+      if (confirmationTimeout) {
+        clearTimeout(confirmationTimeout)
       }
       ws.disconnect()
     }
   }, [sessionId, handleLoginSuccess])
+
 
   // Initial fetch QR code
   useEffect(() => {
