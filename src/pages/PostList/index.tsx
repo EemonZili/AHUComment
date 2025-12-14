@@ -171,6 +171,12 @@ export default function PostList() {
     navigate(`/post/${id}`)
   }
 
+  const handleAvatarClick = (openid: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log('Avatar clicked, navigating to:', `/user/${openid}`)
+    navigate(`/user/${openid}`)
+  }
+
   const handleLike = async (postId: number, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!user) {
@@ -429,7 +435,12 @@ export default function PostList() {
                   <div className={styles.placeContent}>
                     <h3 className={styles.placeName}>{post.context}</h3>
                     <div className={styles.placeAddress}>
-                      <Avatar src={post.ownerOpenid} alt="用户" size={20} />
+                      <Avatar
+                        src={post.ownerOpenid}
+                        alt="用户"
+                        size={20}
+                        onClick={(e) => handleAvatarClick(post.ownerOpenid || '', e)}
+                      />
                       <span>{post.ownerOpenid}</span>
                     </div>
                     <div className={styles.placeRating}>

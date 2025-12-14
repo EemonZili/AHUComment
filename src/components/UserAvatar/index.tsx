@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useUserInfo } from '@/hooks'
 import { Avatar } from '@/components'
 
@@ -8,18 +9,39 @@ interface UserAvatarProps {
 }
 
 /**
- * 用户头像组件 - 自动获取用户信息并显示真实头像
+ * 用户头像组件 - 自动获取用户信息并显示真实头像，点击可跳转到用户主页
  */
 export const UserAvatar = ({ openid, className, size }: UserAvatarProps) => {
   const { userInfo } = useUserInfo(openid)
+  const navigate = useNavigate()
+
+  const handleClick = () => {
+    if (openid) {
+      navigate(`/user/${openid}`)
+    }
+  }
 
   return (
-    <Avatar
-      src={userInfo?.avatar}
-      fallbackSeed={openid || 'user'}
-      alt={userInfo?.nickname || '用户'}
-      className={className}
-    />
+    <div
+      onClick={handleClick}
+      style={{ cursor: 'pointer', display: 'inline-block' }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleClick()
+        }
+      }}
+    >
+      <Avatar
+        src={userInfo?.avatar}
+        fallbackSeed={openid || 'user'}
+        alt={userInfo?.nickname || '用户'}
+        className={className}
+        size={size}
+      />
+    </div>
   )
 }
 
@@ -36,3 +58,4 @@ export const UserName = ({ openid, fallback = '匿名用户' }: UserNameProps) =
 
   return <>{userInfo?.nickname || fallback}</>
 }
+

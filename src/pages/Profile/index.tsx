@@ -15,6 +15,7 @@ import {
   Lock,
   AlertCircle,
   MessageCircle,
+  Database,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { updateUser, uploadAvatar, getUserInfo, downLoadAvatar } from '@/services/user'
@@ -417,6 +418,14 @@ export default function Profile() {
             <div className={styles.linkLeft}>
               <Eye className={styles.linkIcon} size={20} />
               <span className={styles.linkText}>浏览历史</span>
+            </div>
+            <ChevronRight className={styles.linkArrow} size={20} />
+          </div>
+
+          <div className={styles.linkItem} onClick={() => navigate('/cache-manager')}>
+            <div className={styles.linkLeft}>
+              <Database className={styles.linkIcon} size={20} />
+              <span className={styles.linkText}>缓存管理</span>
             </div>
             <ChevronRight className={styles.linkArrow} size={20} />
           </div>

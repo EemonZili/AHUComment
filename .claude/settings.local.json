@@ -1,9 +1,16 @@
 {
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "sk-ant-oat01-TOwhuZgvmC94IwB6AvZQq18mVuoQaDs7ecSapMLC3yvUXiM3RsENqM1ntDWeE6ZGx-r_Gv9wF-jIdB4n83wdWkheXcD6HAA",
+    "ANTHROPIC_BASE_URL": "https://code.newcli.com/claude",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
   "permissions": {
     "allow": [
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)"
     ],
-    "deny": [],
-    "ask": []
+    "deny": []
   }
 }

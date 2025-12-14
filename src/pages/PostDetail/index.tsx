@@ -162,6 +162,11 @@ export default function PostDetail() {
     }
   }
 
+  const handleAvatarClick = (openid: string) => {
+    console.log('Avatar clicked in PostDetail, navigating to:', `/user/${openid}`)
+    navigate(`/user/${openid}`)
+  }
+
   const handleLikePost = async () => {
     if (!user) {
       alert('请先登录')
@@ -423,7 +428,24 @@ export default function PostDetail() {
         {/* Details */}
         <div className={styles.detailsSection}>
           <div className={styles.detailItem}>
-            <Avatar src={post.ownerOpenid} alt="发布者" size={40} />
+            <div
+              onClick={() => handleAvatarClick(post.ownerOpenid || '')}
+              style={{ cursor: 'pointer', display: 'inline-block' }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handleAvatarClick(post.ownerOpenid || '')
+                }
+              }}
+            >
+              <Avatar
+                src={post.ownerOpenid}
+                alt="发布者"
+                size={40}
+              />
+            </div>
             <div>
               <div className={styles.detailLabel}>发布者</div>
               <div className={styles.detailValue}>{post.ownerOpenid}</div>
@@ -524,7 +546,24 @@ export default function PostDetail() {
               {marks.map((mark) => (
                 <div key={mark.id} className={styles.reviewCard}>
                   <div className={styles.reviewHeader}>
-                    <Avatar src={mark.ownerOpenid} alt="用户" size={40} />
+                    <div
+                      onClick={() => handleAvatarClick(mark.ownerOpenid || '')}
+                      style={{ cursor: 'pointer', display: 'inline-block' }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleAvatarClick(mark.ownerOpenid || '')
+                        }
+                      }}
+                    >
+                      <Avatar
+                        src={mark.ownerOpenid}
+                        alt="用户"
+                        size={40}
+                      />
+                    </div>
                     <div className={styles.reviewUserInfo}>
                       <div className={styles.reviewUserName}>{mark.ownerOpenid}</div>
                       <div className={styles.reviewRating}>
@@ -558,6 +597,12 @@ export default function PostDetail() {
                             {comments[mark.id!].map((comment) => (
                               <div key={comment.id} className={styles.commentCard}>
                                 <div className={styles.commentHeader}>
+                                  <Avatar
+                                    src={comment.ownerOpenid}
+                                    alt="用户"
+                                    size={24}
+                                    onClick={() => handleAvatarClick(comment.ownerOpenid || '')}
+                                  />
                                   <span className={styles.commentUser}>
                                     {comment.ownerOpenid}
                                   </span>
@@ -641,3 +686,4 @@ export default function PostDetail() {
     </div>
   )
 }
+

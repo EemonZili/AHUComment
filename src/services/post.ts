@@ -29,6 +29,11 @@ export const pageQueryPostByOpenId = (data: AuthUserDTO) => {
   return reviewRequest.post<any, PostDTO[]>('/post/pageQueryByOpenId', data)
 }
 
+// 根据 ownerOpenid 分页查询贴文（别名，为了兼容）
+export const pageQueryPostByOwnerOpenid = (data: PostDTO) => {
+  return reviewRequest.post<any, PostDTO[]>('/post/pageQueryByOwnerOpenid', data)
+}
+
 // 根据 categoryId 分页查询贴文
 export const pageQueryPostByCategoryId = (data: PostDTO) => {
   return reviewRequest.post<any, PostDTO[]>('/post/pageQueryByCategoryId', data)

@@ -685,11 +685,12 @@
 .commentHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
 }
 
 .commentUser {
+  flex: 1;
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--foreground);

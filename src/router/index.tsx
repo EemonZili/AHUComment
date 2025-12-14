@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from '@/pages/Login'
 import Profile from '@/pages/Profile'
+import UserProfile from '@/pages/UserProfile'
 import ReviewList from '@/pages/ReviewList'
 import ReviewDetail from '@/pages/ReviewDetail'
 import PlaceList from '@/pages/PlaceList'
@@ -9,6 +10,7 @@ import ReviewCreate from '@/pages/ReviewCreate'
 import PostList from '@/pages/PostList'
 import PostDetail from '@/pages/PostDetail'
 import PostCreate from '@/pages/PostCreate'
+import CacheManager from '@/pages/CacheManager'
 import ApiTest from '@/pages/ApiTest'
 import AdminUsers from '@/pages/admin/Users'
 import AdminRoles from '@/pages/admin/Roles'
@@ -61,6 +63,24 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/user/:openid"
+        element={
+          <ProtectedRoute>
+            <UserProfile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/cache-manager"
+        element={
+          <ProtectedRoute>
+            <CacheManager />
           </ProtectedRoute>
         }
       />
